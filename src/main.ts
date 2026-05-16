@@ -51,30 +51,29 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // ─── Swagger / OpenAPI (dev only) ────────────────────────────────────────
-  if (!isProduction) {
-    const swaggerConfig = new DocumentBuilder()
-      .setTitle('Orange Global Staff API')
-      .setDescription(
-        'Production-ready REST API for the Orange Global Staff platform — authentication, talent profiles, and employer accounts.',
-      )
-      .setVersion('1.0')
-      .addBearerAuth(
-        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-        'access-token',
-      )
-      .build();
+  // ─── Swagger / OpenAPI ───────────────────────────────────────────────────
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Orange Global Staff API')
+    .setDescription(
+      'Production-ready REST API for the Orange Global Staff platform — authentication, talent profiles, and employer accounts.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token',
+    )
+    .build();
 
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api/docs', app, document, {
-      swaggerOptions: { persistAuthorization: true },
-    });
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
 
-    console.log(`\n📚  Swagger docs → http://localhost:${port}/api/docs`);
-  }
+  const appUrl = isProduction ? 'https://orangeglobal-backend.onrender.com' : `http://localhost:${port}`;
+  console.log(`\n📚  Swagger docs → ${appUrl}/api/docs`);
 
   await app.listen(port);
-  console.log(`\n🚀  Orange Global Backend running on http://localhost:${port}/api/v1`);
+  console.log(`\n🚀  Orange Global Backend running on ${appUrl}/api/v1`);
   console.log(`🌍  Environment: ${config.get<string>('env')}`);
 }
 

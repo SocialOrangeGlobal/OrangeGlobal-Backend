@@ -118,9 +118,9 @@ npm run start:prod
 
 ## 📚 API Documentation (Swagger OpenAPI)
 
-When running the server locally, you can access the full interactive Swagger OpenAPI documentation at:
+You can access the full interactive Swagger OpenAPI documentation live in production at:
 ```text
-http://localhost:3000/api
+https://orangeglobal-backend.onrender.com/api/docs
 ```
 *(Includes interactive endpoints for Authentication, Users CRUD, Profile Uploads, and Maintenance).*
 
