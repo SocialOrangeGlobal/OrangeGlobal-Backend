@@ -48,29 +48,35 @@ orange-global-backend/
 Create a `.env` file in the root directory based on `.env.example`. Ensure the following variables are correctly configured:
 
 ```env
-# Application Port
-PORT=3000
+# ─── App ──────────────────────────────────────────
+NODE_ENV=development
+PORT=3001
 
-# Prisma Database Connection URL (PostgreSQL)
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT].supabase.co:5432/postgres?schema=public"
+# ─── Frontend Origin (CORS) ───────────────────────
+FRONTEND_URL=http://localhost:5173
 
-# JWT Authentication Secrets
-JWT_SECRET="your_super_secret_access_jwt_key_here"
-JWT_REFRESH_SECRET="your_super_secret_refresh_jwt_key_here"
-JWT_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
+# ─── Prisma / Supabase ────────────────────────────
+# Official Supabase + Prisma connection format
+DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres"
+DIRECT_URL="postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres"
 
-# Supabase Storage Buckets
-SUPABASE_URL="https://[YOUR-PROJECT].supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key_here"
+# ─── JWT ──────────────────────────────────────────
+JWT_ACCESS_SECRET="replace_with_a_very_long_random_secret_at_least_64_chars"
+JWT_REFRESH_SECRET="replace_with_another_very_long_random_secret_at_least_64_chars"
+JWT_ACCESS_EXPIRY="15m"
+JWT_REFRESH_EXPIRY="7d"
 
-# SMTP Mailer Configuration
+# ─── Gmail SMTP ───────────────────────────────────
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-app-password"
-SMTP_FROM="Orange Global <noreply@orangeglobal.com>"
-FRONTEND_URL="http://localhost:5173"
+SMTP_USER="yourgmail@gmail.com"
+SMTP_PASS="your_gmail_app_password"
+MAIL_FROM="Orange Global <yourgmail@gmail.com>"
+MAIL_LOG_ONLY=false
+
+# ─── Supabase Storage ─────────────────────────────
+SUPABASE_URL="https://[project-ref].supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="replace_with_your_supabase_service_role_key_here"
 ```
 
 ---
