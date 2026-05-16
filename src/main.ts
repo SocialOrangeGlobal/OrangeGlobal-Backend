@@ -25,8 +25,22 @@ async function bootstrap() {
   );
 
   // ─── CORS ────────────────────────────────────────────────────────────────
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://orange-global-hire.vercel.app',
+    'https://www.orangeglobal.co',
+    'https://orangeglobal.co',
+    frontendUrl,
+  ];
+
   app.enableCors({
-    origin: frontendUrl,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS Error: Origin ${origin} not allowed`), false);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
