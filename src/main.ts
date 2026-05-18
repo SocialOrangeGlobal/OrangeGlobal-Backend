@@ -25,17 +25,27 @@ async function bootstrap() {
   );
 
   // ─── CORS ────────────────────────────────────────────────────────────────
+  // Dynamically load origins based on environment variables and deployment status
   const allowedOrigins = [
-    'http://localhost:5173',
+    frontendUrl,
     'https://orange-global-hire.vercel.app',
     'https://www.orangeglobal.co',
     'https://orangeglobal.co',
-    frontendUrl,
+    'https://orangeglobal-backend.onrender.com',
   ];
+
+  if (!isProduction) {
+    allowedOrigins.push('http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001');
+  }
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com')
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS Error: Origin ${origin} not allowed`), false);
