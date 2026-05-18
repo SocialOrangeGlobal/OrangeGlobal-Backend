@@ -94,7 +94,7 @@ export class MailService {
     const host = this.configService.get<string>('mail.host');
     const port = this.configService.get<number>('mail.port');
     const user = this.configService.get<string>('mail.user');
-    const pass = (this.configService.get<string>('mail.pass') ?? '').replace(/\s/g, '');
+    const pass = (this.configService.get<string>('mail.pass') ?? '').replace(/[\s"']/g, '');
     this.logger.log(`Initializing MailService → ${host}:${port} (User: ${user})`);
     this.transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
   }
