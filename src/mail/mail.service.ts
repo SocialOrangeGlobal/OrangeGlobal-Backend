@@ -96,7 +96,14 @@ export class MailService {
     const user = this.configService.get<string>('mail.user');
     const pass = (this.configService.get<string>('mail.pass') ?? '').replace(/[\s"']/g, '');
     this.logger.log(`Initializing MailService → ${host}:${port} (User: ${user})`);
-    this.transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+    const transportOptions = {
+      host,
+      port,
+      secure: port === 465,
+      auth: { user: user ?? '', pass },
+      family: 4, // Force IPv4 resolution to prevent ENETUNREACH in cloud containers like Render
+    };
+    this.transporter = nodemailer.createTransport(transportOptions);
   }
 
   // ─── Email Verification ───────────────────────────────────────────────────
