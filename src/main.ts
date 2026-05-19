@@ -30,9 +30,9 @@ async function bootstrap() {
   // Dynamically load origins based on environment variables and deployment status
   const allowedOrigins = [
     frontendUrl,
-    'https://orange-global-hire.vercel.app',
-    'https://www.orangeglobal.co',
     'https://orangeglobal.co',
+    'https://www.orangeglobal.co',
+    'https://orange-global-hire.vercel.app',
     'https://orangeglobal-backend.onrender.com',
   ];
 
