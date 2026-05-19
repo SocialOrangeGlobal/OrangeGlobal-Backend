@@ -34,7 +34,7 @@ export class MaintenanceService implements OnModuleInit {
       return;
     }
 
-    const requiredBuckets = ['profile-pictures', 'resumes', 'talent-documents', 'companyLogo'];
+    const requiredBuckets = ['profile-pictures', 'resumes', 'talent-documents', 'company-logo'];
     this.logger.log('Checking and initializing Supabase storage buckets...');
 
     try {
@@ -130,7 +130,7 @@ export class MaintenanceService implements OnModuleInit {
       return;
     }
 
-    const buckets = ['profile-pictures', 'resumes', 'talent-documents', 'companyLogo'];
+    const buckets = ['profile-pictures', 'resumes', 'talent-documents', 'company-logo'];
     this.logger.log(`Clearing storage buckets: ${buckets.join(', ')}...`);
 
     for (const bucket of buckets) {
