@@ -18,6 +18,7 @@ export const validationSchema = Joi.object({
   SMTP_PASS: Joi.string().optional(),
   MAIL_FROM: Joi.string().optional(),
   MAIL_LOG_ONLY: Joi.boolean().default(false),
+  RESEND_API_KEY: Joi.string().optional(),
   SUPABASE_URL: Joi.string().uri().required(),
   SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
 });
@@ -43,6 +44,7 @@ export default () => ({
     pass: process.env.SMTP_PASS,
     from: process.env.MAIL_FROM,
     logOnly: process.env.MAIL_LOG_ONLY === 'true',
+    resendApiKey: process.env.RESEND_API_KEY,
   },
   supabase: {
     url: process.env.SUPABASE_URL,

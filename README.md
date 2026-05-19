@@ -66,13 +66,14 @@ JWT_REFRESH_SECRET="replace_with_another_very_long_random_secret_at_least_64_cha
 JWT_ACCESS_EXPIRY="15m"
 JWT_REFRESH_EXPIRY="7d"
 
-# ─── Gmail SMTP ───────────────────────────────────
+# ─── Gmail SMTP / HTTPS API ───────────────────────
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
 SMTP_USER="yourgmail@gmail.com"
 SMTP_PASS="your_gmail_app_password"
 MAIL_FROM="Orange Global <yourgmail@gmail.com>"
 MAIL_LOG_ONLY=false
+RESEND_API_KEY="re_your_api_key_here"
 
 # ─── Supabase Storage ─────────────────────────────
 SUPABASE_URL="https://[project-ref].supabase.co"

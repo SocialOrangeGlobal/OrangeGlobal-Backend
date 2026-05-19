@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
@@ -39,7 +39,7 @@ function layout(body: string): string {
           <td style="background:#ffffff;border-radius:10px;border:1px solid ${C.border};">
             <!-- Teal top bar -->
             <table width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="height:3px;background-color:${C.teal};border-radius:10px 10px 0 0;"></td></tr>
+               <tr><td style="height:3px;background-color:${C.teal};border-radius:10px 10px 0 0;"></td></tr>
             </table>
             <!-- Body -->
             <table width="100%" cellpadding="0" cellspacing="0">
@@ -86,28 +86,66 @@ const divider = `<table width="100%" cellpadding="0" cellspacing="0" style="marg
 </table>`;
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleInit {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
-    const host = this.configService.get<string>('mail.host');
-    const port = this.configService.get<number>('mail.port');
+    const host = this.configService.get<string>('mail.host') || 'smtp.gmail.com';
+    const port = this.configService.get<number>('mail.port') || 587;
     const user = this.configService.get<string>('mail.user');
     const pass = (this.configService.get<string>('mail.pass') ?? '').replace(/[\s"']/g, '');
     this.logger.log(`Initializing MailService → ${host}:${port} (User: ${user})`);
-    const transportOptions = {
+
+    // In cloud staging/production environments (Render, AWS, DigitalOcean), direct SMTP on port 587 is often blocked or throttled.
+    // Using Nodemailer's built-in 'gmail' service definition automatically applies pre-configured, cloud-optimized Google SMTP routing.
+    const isGmail = host.includes('gmail');
+
+    const transportOptions: any = isGmail ? {
+      service: 'gmail',
+      auth: { user: user ?? '', pass },
+      family: 4, // Force IPv4 resolution to prevent ENETUNREACH in cloud containers
+      tls: { rejectUnauthorized: false },
+    } : {
       host,
       port,
       secure: port === 465,
       auth: { user: user ?? '', pass },
-      family: 4, // Force IPv4 resolution to prevent ENETUNREACH in cloud containers like Render
+      family: 4,
+      tls: { rejectUnauthorized: false, ciphers: 'SSLv3' },
     };
+
     this.transporter = nodemailer.createTransport(transportOptions);
+  }
+
+  async onModuleInit() {
+    const isLogOnly = this.configService.get<boolean>('mail.logOnly');
+    if (isLogOnly) {
+      this.logger.warn('MailService is running in LOG_ONLY mode. Emails will be logged to console but not sent.');
+      return;
+    }
+
+    const resendApiKey = this.configService.get<string>('mail.resendApiKey');
+    if (resendApiKey) {
+      this.logger.log('✅ Resend API Key configured. MailService will send emails using Resend HTTPS API (Port 443).');
+      return;
+    }
+
+    this.logger.log('Verifying SMTP connection to mail server...');
+    try {
+      const success = await this.transporter.verify();
+      if (success) {
+        this.logger.log('✅ SMTP connection verified successfully. MailService is ready to send emails.');
+      }
+    } catch (error: any) {
+      this.logger.error(`❌ SMTP Connection Verification Failed: ${error.message}`);
+      this.logger.error('Please check your SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS environment variables.');
+    }
   }
 
   // ─── Email Verification ───────────────────────────────────────────────────
   async sendVerificationEmail(email: string, token: string) {
+    this.logger.log(`Preparing Verification Email for: ${email}`);
     const url = `${this.configService.get<string>('frontendUrl')}/verify-email?token=${token}`;
     const body = `
       <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">Verify your email address</h2>
@@ -140,6 +178,7 @@ export class MailService {
 
   // ─── Password Reset ───────────────────────────────────────────────────────
   async sendPasswordResetEmail(email: string, token: string) {
+    this.logger.log(`Preparing Password Reset Email for: ${email}`);
     const url = `${this.configService.get<string>('frontendUrl')}/reset-password?token=${token}`;
     const body = `
       <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">Reset your password</h2>
@@ -179,12 +218,55 @@ export class MailService {
       if (m) this.logger.log(`Action Link: ${m[1]}`);
       return;
     }
-    try {
-      await this.transporter.sendMail({ from: this.configService.get<string>('mail.from'), ...options });
-      this.logger.log(`Email sent to ${options.to}`);
-    } catch (error) {
-      this.logger.error(`Failed to send email to ${options.to}: ${error.message}`);
-      throw error;
+
+    const from = this.configService.get<string>('mail.from') || 'Orange Global <social@orangeglobal.co>';
+    const resendApiKey = this.configService.get<string>('mail.resendApiKey');
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      attempt++;
+      try {
+        if (resendApiKey) {
+          this.logger.log(`[Attempt ${attempt}/${maxRetries}] Resend HTTPS sending email to ${options.to}...`);
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from,
+              to: options.to,
+              subject: options.subject,
+              html: options.html,
+            }),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Resend API returned status ${response.status}: ${errText}`);
+          }
+
+          const resData = await response.json() as { id: string };
+          this.logger.log(`✅ Email successfully sent to ${options.to} via Resend (ID: ${resData.id})`);
+          return;
+        } else {
+          this.logger.log(`[Attempt ${attempt}/${maxRetries}] Transporter SMTP sending email to ${options.to}...`);
+          const info = await this.transporter.sendMail({ from, ...options });
+          this.logger.log(`✅ Email successfully sent to ${options.to} (Message ID: ${info.messageId})`);
+          return; // Success, exit loop
+        }
+      } catch (error: any) {
+        this.logger.warn(`⚠️ Attempt ${attempt} failed to send email to ${options.to}: ${error.message}`);
+        if (attempt >= maxRetries) {
+          this.logger.error(`❌ All ${maxRetries} attempts failed to send email to ${options.to}. Final Error: ${error.message}`);
+          this.logger.debug(`Stack Trace: ${error.stack}`);
+          throw error;
+        }
+        // Wait 1.5 seconds before retrying (exponential/constant backoff for cloud network hiccups)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
   }
 }

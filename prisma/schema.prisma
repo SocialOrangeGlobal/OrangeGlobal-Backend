@@ -32,21 +32,74 @@ model User {
 }
 
 model TalentProfile {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @unique @map("user_id") @db.Uuid
-  fullName    String   @map("full_name") @db.VarChar(255)
-  workEmail   String   @map("work_email") @db.VarChar(255)
-  location    Json?
-  phone       String?  @db.VarChar(50)
-  educations  Json     @default("[]")
-  skills      String[] @default([])
-  experiences Json     @default("[]")
-  resumeUrl   String?  @map("resume_url") @db.Text
-  avatarUrl   String?  @map("avatar_url") @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resumes     Resume[]
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @unique @map("user_id") @db.Uuid
+  fullName              String   @map("full_name") @db.VarChar(255)
+  workEmail             String   @map("work_email") @db.VarChar(255)
+  location              Json?
+  phone                 String?  @db.VarChar(50)
+  educations            Json     @default("[]")
+  skills                String[] @default([])
+  experiences           Json     @default("[]")
+  resumeUrl             String?  @map("resume_url") @db.Text
+  avatarUrl             String?  @map("avatar_url") @db.Text
+
+  dob                   String?  @db.VarChar(50)
+  age                   String?  @db.VarChar(20)
+  gender                String?  @db.VarChar(50)
+  nationality           String?  @db.VarChar(100)
+  countryOfResidence    String?  @map("country_of_residence") @db.VarChar(100)
+  whatsapp              String?  @db.VarChar(50)
+  linkedin              String?  @db.VarChar(255)
+  opportunityType       String?  @map("opportunity_type") @db.VarChar(100)
+  preferredIndustry     String?  @map("preferred_industry") @db.VarChar(100)
+  preferredRole         String?  @map("preferred_role") @db.VarChar(100)
+  preferredSalary       String?  @map("preferred_salary") @db.VarChar(100)
+  startDate             String?  @map("start_date") @db.VarChar(100)
+  jobTitle              String?  @map("job_title") @db.VarChar(255)
+  employerName          String?  @map("employer_name") @db.VarChar(255)
+  employmentCountry     String?  @map("employment_country") @db.VarChar(100)
+  totalExp              String?  @map("total_exp") @db.VarChar(50)
+  relevantExp           String?  @map("relevant_exp") @db.VarChar(50)
+  summary               String?  @db.Text
+  isEmployed            String?  @map("is_employed") @db.VarChar(20)
+  workedOverseas        String?  @map("worked_overseas") @db.VarChar(20)
+  overseasCountries     String?  @map("overseas_countries") @db.Text
+  highestQualification  String?  @map("highest_qualification") @db.VarChar(255)
+  fieldOfStudy          String?  @map("field_of_study") @db.VarChar(255)
+  institutionName       String?  @map("institution_name") @db.VarChar(255)
+  graduationYear        String?  @map("graduation_year") @db.VarChar(20)
+  hasLicences           String?  @map("has_licences") @db.VarChar(20)
+  licencesList          String?  @map("licences_list") @db.Text
+  englishTest           String?  @map("english_test") @db.VarChar(100)
+  overallScore          String?  @map("overall_score") @db.VarChar(50)
+  testDate              String?  @map("test_date") @db.VarChar(50)
+  visaStatus            String?  @map("visa_status") @db.VarChar(100)
+  legalWorkRights       String?  @map("legal_work_rights") @db.VarChar(100)
+  openToRelocation      String?  @map("open_to_relocation") @db.VarChar(20)
+  appliedAusVisa        String?  @map("applied_aus_visa") @db.VarChar(20)
+  visaTypeApplied       String?  @map("visa_type_applied") @db.VarChar(100)
+  visaRefusal           String?  @map("visa_refusal") @db.VarChar(20)
+  visaRefusalDetails    String?  @map("visa_refusal_details") @db.Text
+  relocateAloneOrFamily String?  @map("relocate_alone_or_family") @db.VarChar(100)
+  validPassport         String?  @map("valid_passport") @db.VarChar(20)
+  passportExpiry        String?  @map("passport_expiry") @db.VarChar(50)
+  medicalBackgroundCheck String? @map("medical_background_check") @db.VarChar(20)
+  criminalConvictions   String?  @map("criminal_convictions") @db.VarChar(20)
+  criminalDetails       String?  @map("criminal_details") @db.Text
+  passportUrl           String?  @map("passport_url") @db.Text
+  visaUrl               String?  @map("visa_url") @db.Text
+  eduCertUrl            String?  @map("edu_cert_url") @db.Text
+  empCertUrl            String?  @map("emp_cert_url") @db.Text
+  englishTestUrl        String?  @map("english_test_url") @db.Text
+  licenceUrl            String?  @map("licence_url") @db.Text
+  declarationTrue       String?  @map("declaration_true") @db.VarChar(20)
+  declarationConsent    String?  @map("declaration_consent") @db.VarChar(20)
+
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes               Resume[]
 
   @@map("talent_profiles")
 }

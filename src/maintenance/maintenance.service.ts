@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as ws from 'ws';
 
 @Injectable()
-export class MaintenanceService {
+export class MaintenanceService implements OnModuleInit {
   private readonly logger = new Logger(MaintenanceService.name);
   private supabase: SupabaseClient;
 
@@ -25,6 +25,63 @@ export class MaintenanceService {
           transport: ws as any,
         },
       });
+    }
+  }
+
+  async onModuleInit() {
+    if (!this.supabase) {
+      this.logger.warn('Supabase client not initialized. Skipping bucket creation.');
+      return;
+    }
+
+    const requiredBuckets = ['profile-pictures', 'resumes', 'talent-documents', 'companyLogo'];
+    this.logger.log('Checking and initializing Supabase storage buckets...');
+
+    try {
+      const { data: existingBuckets, error: listError } = await this.supabase.storage.listBuckets();
+      if (listError) {
+        this.logger.error(`Failed to list buckets: ${listError.message}`);
+        return;
+      }
+
+      const existingNames = existingBuckets?.map(b => b.name) || [];
+
+      for (const bucket of requiredBuckets) {
+        if (!existingNames.includes(bucket)) {
+          this.logger.log(`Creating missing storage bucket: ${bucket}`);
+          const { error: createError } = await this.supabase.storage.createBucket(bucket, {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+          });
+          if (createError) {
+            this.logger.error(`Failed to create bucket ${bucket}: ${createError.message}`);
+          } else {
+            this.logger.log(`Successfully created public bucket: ${bucket}`);
+          }
+        } else {
+          this.logger.log(`Storage bucket already exists: ${bucket}`);
+        }
+      }
+
+      this.logger.log('Configuring Storage Row-Level Security (RLS) policies for public access...');
+      try {
+        await this.prisma.$executeRawUnsafe(`
+          DROP POLICY IF EXISTS "Allow public insert" ON storage.objects;
+          DROP POLICY IF EXISTS "Allow public select" ON storage.objects;
+          DROP POLICY IF EXISTS "Allow public update" ON storage.objects;
+          DROP POLICY IF EXISTS "Allow public delete" ON storage.objects;
+
+          CREATE POLICY "Allow public insert" ON storage.objects FOR INSERT TO public WITH CHECK (true);
+          CREATE POLICY "Allow public select" ON storage.objects FOR SELECT TO public USING (true);
+          CREATE POLICY "Allow public update" ON storage.objects FOR UPDATE TO public USING (true);
+          CREATE POLICY "Allow public delete" ON storage.objects FOR DELETE TO public USING (true);
+        `);
+        this.logger.log('Successfully configured Storage RLS policies.');
+      } catch (sqlErr: any) {
+        this.logger.error(`Failed to configure Storage RLS policies: ${sqlErr.message}`);
+      }
+    } catch (err: any) {
+      this.logger.error(`Unexpected error initializing buckets: ${err.message}`);
     }
   }
 
@@ -73,7 +130,7 @@ export class MaintenanceService {
       return;
     }
 
-    const buckets = ['profile-pictures', 'resumes', 'companyLogo'];
+    const buckets = ['profile-pictures', 'resumes', 'talent-documents', 'companyLogo'];
     this.logger.log(`Clearing storage buckets: ${buckets.join(', ')}...`);
 
     for (const bucket of buckets) {
