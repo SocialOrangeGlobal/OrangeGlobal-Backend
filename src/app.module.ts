@@ -8,6 +8,9 @@ import { TalentModule } from './talent/talent.module';
 import { EmployerModule } from './employer/employer.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { ContactModule } from './contact/contact.module';
+import { JobsModule } from './jobs/jobs.module';
+
 
 @Module({
   imports: [
@@ -37,6 +40,8 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
     TalentModule,
     EmployerModule,
     MaintenanceModule,
+    ContactModule,
+    JobsModule,
   ],
 })
 export class AppModule { }

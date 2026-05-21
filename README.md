@@ -31,6 +31,8 @@ orange-global-backend/
 ├── src/
 │   ├── auth/                 # JWT Authentication, Guards, Strategies & Signup/Signin flows
 │   ├── users/                # Talent & Employer Profile Management & Resume Intelligence
+│   ├── jobs/                 # Job creation, listing, application & matching modules
+│   ├── contact/              # Contact form handling and administration
 │   ├── mail/                 # SMTP Mailer Module for Verification & Password Reset
 │   ├── maintenance/          # Development/Staging System Reset & Storage Cleanup Endpoints
 │   ├── common/               # Global Interceptors (TransformInterceptor), Filters & Decorators

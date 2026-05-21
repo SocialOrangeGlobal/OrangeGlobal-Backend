@@ -209,6 +209,51 @@ export class MailService implements OnModuleInit {
     await this.sendMail({ to: email, subject: 'Reset your password – Orange Global', html: layout(body) });
   }
 
+  // ─── Contact Form Submission Notification ─────────────────────────────────
+  async sendContactNotificationEmail(data: { fullName: string; email: string; phone?: string; subject: string; message: string }) {
+    this.logger.log(`Preparing Contact Form Notification Email for support team`);
+    const body = `
+      <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">New Contact Form Submission</h2>
+      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
+        You have received a new message from the contact form on the website.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:${C.gray};">
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};width:120px;">Name:</td>
+          <td style="padding:6px 0;">${data.fullName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};">Email:</td>
+          <td style="padding:6px 0;"><a href="mailto:${data.email}" style="color:${C.teal};text-decoration:none;">${data.email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};">Phone:</td>
+          <td style="padding:6px 0;">${data.phone || 'Not provided'}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};">Subject:</td>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};">${data.subject}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 0 6px 0;font-weight:700;color:${C.dark};" colspan="2">Message:</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;background-color:${C.bg};border-radius:6px;color:${C.dark};line-height:1.6;" colspan="2">
+            ${data.message.replace(/\n/g, '<br/>')}
+          </td>
+        </tr>
+      </table>
+    `;
+
+    const supportEmail = this.configService.get<string>('mail.from')?.match(/<([^>]+)>/)?.[1] || 'social@orangeglobal.co';
+    await this.sendMail({
+      to: supportEmail,
+      subject: `New Contact Submission: ${data.subject}`,
+      html: layout(body),
+    });
+  }
+
   // ─── Internal sendMail ────────────────────────────────────────────────────
   private async sendMail(options: { to: string; subject: string; html: string }) {
     const isLogOnly = this.configService.get<boolean>('mail.logOnly');

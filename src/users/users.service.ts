@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, UserRole, TalentProfile, EmployerProfile } from '@prisma/client';
+import { User, UserRole, TalentProfile, EmployerProfile, AdminProfile } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +24,7 @@ export class UsersService {
           },
         },
         employerProfile: true,
+        adminProfile: true,
       },
     });
 
@@ -58,11 +59,31 @@ export class UsersService {
       if (p.businessPhone) profileScore += 15;
       if (p.companyLogo) profileScore += 15;
       if (p.jobTitle) profileScore += 10;
+    } else if (user.role === UserRole.ADMIN) {
+      if (!user.adminProfile) {
+        user.adminProfile = await this.prisma.adminProfile.create({
+          data: {
+            userId: user.id,
+            firstName: 'Orange',
+            lastName: 'Global',
+          },
+        });
+      }
+      fullName = [user.adminProfile.firstName, user.adminProfile.lastName].filter(Boolean).join(' ');
+      avatarUrl = user.adminProfile.avatarUrl || '';
+      const p = user.adminProfile;
+      if (p.firstName && p.lastName) profileScore += 20;
+      if (p.phone) profileScore += 20;
+      if (p.bio) profileScore += 20;
+      if (p.avatarUrl) profileScore += 20;
+      if (p.country && p.cityState) profileScore += 20;
     }
 
     const profileData = user.role === UserRole.TALENT
       ? (user.talentProfile ? { ...user.talentProfile, profileScore } : null)
-      : (user.employerProfile ? { ...user.employerProfile, profileScore } : null);
+      : user.role === UserRole.EMPLOYER
+      ? (user.employerProfile ? { ...user.employerProfile, profileScore } : null)
+      : (user.adminProfile ? { ...user.adminProfile, profileScore } : null);
 
     return {
       id: safeUser.id,
@@ -83,6 +104,8 @@ export class UsersService {
       const {
         fullName,
         location,
+        city,
+        state,
         phone,
         educations,
         skills,
@@ -142,12 +165,23 @@ export class UsersService {
         declarationConsent,
       } = dto;
 
-      const locationJson = location
-        ? {
-          city: location.split(',')[0]?.trim() || '',
-          country: location.split(',')[1]?.trim() || '',
-        }
-        : undefined;
+      let locationJson: any = undefined;
+      if (city !== undefined || state !== undefined || countryOfResidence !== undefined) {
+        locationJson = {
+          city: city || '',
+          state: state || '',
+          country: countryOfResidence || '',
+        };
+      } else if (location && typeof location === 'string') {
+        const parts = location.split(',');
+        locationJson = {
+          city: parts[0]?.trim() || '',
+          state: '',
+          country: parts[1]?.trim() || '',
+        };
+      } else if (location && typeof location === 'object') {
+        locationJson = location;
+      }
 
       return this.prisma.talentProfile.update({
         where: { userId },
@@ -213,7 +247,7 @@ export class UsersService {
           declarationConsent,
         },
       });
-    } else {
+    } else if (user.role === UserRole.EMPLOYER) {
       const {
         firstName,
         lastName,
@@ -240,6 +274,59 @@ export class UsersService {
           companyLogo,
         },
       });
+    } else if (user.role === UserRole.ADMIN) {
+      const {
+        firstName,
+        lastName,
+        phone,
+        bio,
+        avatarUrl,
+        facebook,
+        twitter,
+        linkedin,
+        instagram,
+        country,
+        cityState,
+        postalCode,
+        taxId,
+      } = dto;
+
+      return this.prisma.adminProfile.upsert({
+        where: { userId },
+        create: {
+          userId,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          phone,
+          bio,
+          avatarUrl,
+          facebook,
+          twitter,
+          linkedin,
+          instagram,
+          country,
+          cityState,
+          postalCode,
+          taxId,
+        },
+        update: {
+          firstName,
+          lastName,
+          phone,
+          bio,
+          avatarUrl,
+          facebook,
+          twitter,
+          linkedin,
+          instagram,
+          country,
+          cityState,
+          postalCode,
+          taxId,
+        },
+      });
+    } else {
+      throw new BadRequestException('Invalid user role');
     }
   }
 
@@ -373,5 +460,199 @@ export class UsersService {
     }
 
     return { message: 'Resume deleted successfully' };
+  }
+
+  async findAllTalents(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { workEmail: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { user: { email: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      this.prisma.talentProfile.count({ where }),
+      this.prisma.talentProfile.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              isActive: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+      items,
+    };
+  }
+
+  async findAllEmployers(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { businessEmail: { contains: search, mode: 'insensitive' } },
+        { businessPhone: { contains: search, mode: 'insensitive' } },
+        { user: { email: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      this.prisma.employerProfile.count({ where }),
+      this.prisma.employerProfile.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              isActive: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+      items,
+    };
+  }
+
+  async findOneUser(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        talentProfile: true,
+        employerProfile: true,
+        adminProfile: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const { passwordHash, refreshTokenHash, ...safeUser } = user;
+    return safeUser;
+  }
+
+  async adminUpdateUser(id: string, dto: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        talentProfile: true,
+        employerProfile: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const { email, isActive, profileData } = dto;
+
+    // Update User
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        email: email !== undefined ? email : undefined,
+        isActive: isActive !== undefined ? isActive : undefined,
+      },
+    });
+
+    if (user.role === UserRole.TALENT && profileData) {
+      let locationJson: any = undefined;
+      if (profileData.city !== undefined || profileData.state !== undefined || profileData.countryOfResidence !== undefined) {
+        locationJson = {
+          city: profileData.city || '',
+          state: profileData.state || '',
+          country: profileData.countryOfResidence || '',
+        };
+      } else if (typeof profileData.location === 'string' && profileData.location) {
+        locationJson = {
+          city: profileData.location.split(',')[0]?.trim() || '',
+          country: profileData.location.split(',')[1]?.trim() || '',
+        };
+      } else if (profileData.location && typeof profileData.location === 'object') {
+        locationJson = profileData.location;
+      }
+
+      // Strip out internal read-only keys, plus transient/virtual fields
+      const {
+        id: _tId,
+        userId: _uId,
+        createdAt: _cAt,
+        updatedAt: _uAt,
+        resumes: _res,
+        user: _usr,
+        state: _state,
+        city: _city,
+        location: _loc,
+        ...fieldsToUpdate } = profileData;
+
+      // Handle skills array formatting if received as a comma-separated string
+      if (typeof fieldsToUpdate.skills === 'string') {
+        fieldsToUpdate.skills = fieldsToUpdate.skills
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+      }
+
+      await this.prisma.talentProfile.update({
+        where: { userId: id },
+        data: {
+          ...fieldsToUpdate,
+          location: locationJson !== undefined ? locationJson : undefined,
+        },
+      });
+    } else if (user.role === UserRole.EMPLOYER && profileData) {
+      // Strip out internal read-only keys
+      const { id: _eId, userId: _uId, createdAt: _cAt, updatedAt: _uAt, user: _usr, ...fieldsToUpdate } = profileData;
+
+      await this.prisma.employerProfile.update({
+        where: { userId: id },
+        data: {
+          ...fieldsToUpdate,
+        },
+      });
+    }
+
+    return this.findOneUser(id);
+  }
+
+  async deleteUser(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prisma.user.delete({ where: { id } });
+    return { success: true, message: 'User deleted successfully' };
   }
 }

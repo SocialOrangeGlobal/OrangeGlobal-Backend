@@ -236,6 +236,7 @@ export class AuthService {
       include: {
         talentProfile: true,
         employerProfile: true,
+        adminProfile: true,
       },
     });
 
@@ -271,6 +272,9 @@ export class AuthService {
     } else if (user.role === UserRole.EMPLOYER && user.employerProfile) {
       fullName = [user.employerProfile.firstName, user.employerProfile.lastName].filter(Boolean).join(' ');
       avatarUrl = user.employerProfile.companyLogo || '';
+    } else if (user.role === UserRole.ADMIN) {
+      fullName = [user.adminProfile?.firstName, user.adminProfile?.lastName].filter(Boolean).join(' ');
+      avatarUrl = user.adminProfile?.avatarUrl || '';
     }
 
     return {
@@ -315,6 +319,9 @@ export class AuthService {
     } else if (user.role === UserRole.EMPLOYER && user.employerProfile) {
       fullName = [user.employerProfile.firstName, user.employerProfile.lastName].filter(Boolean).join(' ');
       avatarUrl = user.employerProfile.companyLogo || '';
+    } else if (user.role === UserRole.ADMIN) {
+      fullName = 'Administrator';
+      avatarUrl = '';
     }
 
     return {

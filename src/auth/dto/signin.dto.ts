@@ -13,7 +13,7 @@ export class SignInDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;
 
-  @ApiProperty({ example: 'TALENT', enum: ['TALENT', 'EMPLOYER'] })
-  @IsIn(['TALENT', 'EMPLOYER'], { message: 'Role must be TALENT or EMPLOYER' })
-  role: 'TALENT' | 'EMPLOYER';
+  @ApiProperty({ example: 'TALENT', enum: ['TALENT', 'EMPLOYER', 'ADMIN'] })
+  @IsIn(['TALENT', 'EMPLOYER', 'ADMIN'], { message: 'Role must be TALENT, EMPLOYER or ADMIN' })
+  role: 'TALENT' | 'EMPLOYER' | 'ADMIN';
 }

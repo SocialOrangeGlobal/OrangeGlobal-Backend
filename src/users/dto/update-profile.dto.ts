@@ -20,6 +20,16 @@ export class UpdateProfileDto {
   @IsString()
   location?: string;
 
+  @ApiPropertyOptional({ example: 'Sydney' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'New South Wales' })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
   @ApiPropertyOptional({ example: '+234 800 0000000' })
   @IsOptional()
   @IsString()
@@ -351,4 +361,45 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   companyLogo?: string;
+
+  // Admin Fields
+  @ApiPropertyOptional({ example: 'Super Administrator' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'https://facebook.com/orangeglobal' })
+  @IsOptional()
+  @IsString()
+  facebook?: string;
+
+  @ApiPropertyOptional({ example: 'https://twitter.com/orangeglobal' })
+  @IsOptional()
+  @IsString()
+  twitter?: string;
+
+  @ApiPropertyOptional({ example: 'https://instagram.com/orangeglobal' })
+  @IsOptional()
+  @IsString()
+  instagram?: string;
+
+  @ApiPropertyOptional({ example: 'Australia' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({ example: 'Melbourne, Victoria' })
+  @IsOptional()
+  @IsString()
+  cityState?: string;
+
+  @ApiPropertyOptional({ example: '3000' })
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @ApiPropertyOptional({ example: 'TAX987654' })
+  @IsOptional()
+  @IsString()
+  taxId?: string;
 }
