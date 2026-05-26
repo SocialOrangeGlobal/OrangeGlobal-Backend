@@ -13,6 +13,7 @@
 ## 🚀 Key Features & Recent Updates
 
 - **ATS / Resume Parsing**: AI-driven resume parsing (PDF/DOCX) using Google Gemini. Automatically extracts skills, matches profiles to job postings, and calculates an ATS Match Score.
+- **Dynamic Dashboard Analytics**: Centralized `GET /api/v1/dashboard/stats` endpoint providing real-time metrics on users, active jobs, and application status distributions.
 - **Applications Module**: Comprehensive lifecycle tracking for candidate applications (`APPLIED`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `OFFER_SENT`, `OFFER_ACCEPTED`, `REJECTED`, `WITHDRAWN`).
 - **Interview Scheduling**: Integrated endpoints to handle interview dates, links, modes (Video/In-Person), and recruiter notes.
 - **Admin Global View**: Specialized `GET /api/v1/applications` endpoint allowing administrators to query paginated applications globally across all job postings.

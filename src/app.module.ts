@@ -12,6 +12,7 @@ import { ContactModule } from './contact/contact.module';
 import { JobsModule } from './jobs/jobs.module';
 import { AtsModule } from './ats/ats.module';
 import { ApplicationsModule } from './applications/applications.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 
 @Module({
@@ -46,6 +47,7 @@ import { ApplicationsModule } from './applications/applications.module';
     JobsModule,
     AtsModule,
     ApplicationsModule,
+    DashboardModule,
   ],
 })
 export class AppModule { }
