@@ -71,6 +71,11 @@ export class JobsService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.job.findMany({
         where,
+        include: {
+          _count: {
+            select: { applications: true },
+          },
+        },
         orderBy: { postedAt: 'desc' },
         skip,
         take: limit,
@@ -90,7 +95,12 @@ export class JobsService {
   }
 
   async findOne(id: string) {
-    const job = await this.prisma.job.findUnique({ where: { id } });
+    const job = await this.prisma.job.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { applications: true } },
+      },
+    });
     if (!job) throw new NotFoundException('Job not found');
     return { success: true, data: job };
   }

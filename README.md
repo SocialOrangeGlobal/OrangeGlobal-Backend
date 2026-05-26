@@ -10,6 +10,17 @@
 
 ---
 
+## 🚀 Key Features & Recent Updates
+
+- **ATS / Resume Parsing**: AI-driven resume parsing (PDF/DOCX) using Google Gemini. Automatically extracts skills, matches profiles to job postings, and calculates an ATS Match Score.
+- **Applications Module**: Comprehensive lifecycle tracking for candidate applications (`APPLIED`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `OFFER_SENT`, `OFFER_ACCEPTED`, `REJECTED`, `WITHDRAWN`).
+- **Interview Scheduling**: Integrated endpoints to handle interview dates, links, modes (Video/In-Person), and recruiter notes.
+- **Admin Global View**: Specialized `GET /api/v1/applications` endpoint allowing administrators to query paginated applications globally across all job postings.
+- **Authentication**: JWT-based authentication and Role-Based Access Control (RBAC) ensuring separation between `ADMIN` and `TALENT` roles.
+- **File Management**: S3-compatible cloud storage handlers for candidate resumes and portfolio documents.
+
+---
+
 ## 🏗️ Architecture & Tech Stack
 
 - **Framework**: [NestJS](https://nestjs.com/) (v10.x) - Modular, robust server-side architecture.

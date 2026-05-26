@@ -10,6 +10,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ContactModule } from './contact/contact.module';
 import { JobsModule } from './jobs/jobs.module';
+import { AtsModule } from './ats/ats.module';
+import { ApplicationsModule } from './applications/applications.module';
 
 
 @Module({
@@ -42,6 +44,8 @@ import { JobsModule } from './jobs/jobs.module';
     MaintenanceModule,
     ContactModule,
     JobsModule,
+    AtsModule,
+    ApplicationsModule,
   ],
 })
 export class AppModule { }

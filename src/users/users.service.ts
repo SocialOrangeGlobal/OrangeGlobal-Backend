@@ -19,14 +19,14 @@ export class UsersService {
         talentProfile: {
           include: {
             resumes: {
-              orderBy: { createdAt: 'desc' },
+              orderBy: { uploadedAt: 'desc' },
             },
           },
         },
         employerProfile: true,
         adminProfile: true,
       },
-    });
+    }) as any;
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -82,8 +82,8 @@ export class UsersService {
     const profileData = user.role === UserRole.TALENT
       ? (user.talentProfile ? { ...user.talentProfile, profileScore } : null)
       : user.role === UserRole.EMPLOYER
-      ? (user.employerProfile ? { ...user.employerProfile, profileScore } : null)
-      : (user.adminProfile ? { ...user.adminProfile, profileScore } : null);
+        ? (user.employerProfile ? { ...user.employerProfile, profileScore } : null)
+        : (user.adminProfile ? { ...user.adminProfile, profileScore } : null);
 
     return {
       id: safeUser.id,
@@ -334,7 +334,7 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { talentProfile: true },
-    });
+    }) as any;
 
     if (!user || user.role !== UserRole.TALENT || !user.talentProfile) {
       throw new BadRequestException('Only talent users can upload resumes');
@@ -369,7 +369,7 @@ export class UsersService {
         fileName: dto.fileName,
         fileUrl: dto.fileUrl,
         isDefault: makeDefault,
-        atsScore,
+        atsBaseScore: atsScore,
       },
     });
   }
@@ -378,7 +378,7 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { talentProfile: true },
-    });
+    }) as any;
 
     if (!user || user.role !== UserRole.TALENT || !user.talentProfile) {
       throw new BadRequestException('Only talent users can manage resumes');
@@ -416,7 +416,7 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { talentProfile: true },
-    });
+    }) as any;
 
     if (!user || user.role !== UserRole.TALENT || !user.talentProfile) {
       throw new BadRequestException('Only talent users can manage resumes');
@@ -439,7 +439,7 @@ export class UsersService {
     if (resume.isDefault) {
       const remaining = await this.prisma.resume.findFirst({
         where: { talentId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { uploadedAt: 'desc' },
       });
 
       if (remaining) {
@@ -573,7 +573,7 @@ export class UsersService {
         talentProfile: true,
         employerProfile: true,
       },
-    });
+    }) as any;
 
     if (!user) throw new NotFoundException('User not found');
 

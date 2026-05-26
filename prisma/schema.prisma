@@ -12,6 +12,33 @@ enum UserRole {
   ADMIN
 }
 
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  CLOSED
+  COMPLETED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  OFFER_SENT
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ResumeStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
 model User {
   id               String           @id @default(uuid()) @db.Uuid
   email            String           @unique @db.VarChar(255)
@@ -102,21 +129,36 @@ model TalentProfile {
   updatedAt             DateTime @updatedAt @map("updated_at")
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumes               Resume[]
+  applications          Application[]
 
   @@map("talent_profiles")
 }
 
 model Resume {
-  id           String        @id @default(uuid()) @db.Uuid
-  talentId     String        @map("talent_id") @db.Uuid
-  fileName     String        @map("file_name") @db.VarChar(255)
-  fileUrl      String        @map("file_url") @db.Text
-  isDefault    Boolean       @default(false) @map("is_default")
-  atsScore     Int?          @map("ats_score")
-  parsedSkills String[]      @default([]) @map("parsed_skills")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  talent       TalentProfile @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  id               String        @id @default(uuid()) @db.Uuid
+  talentId         String        @map("talent_id") @db.Uuid
+  fileName         String        @map("file_name") @db.VarChar(255)
+  fileUrl          String        @map("file_url") @db.Text
+  fileSize         Int?          @map("file_size")
+  mimeType         String?       @map("mime_type") @db.VarChar(100)
+  isDefault        Boolean       @default(false) @map("is_default")
+  status           ResumeStatus  @default(PROCESSING)
+  
+  parsedName       String?       @map("parsed_name") @db.VarChar(255)
+  parsedEmail      String?       @map("parsed_email") @db.VarChar(255)
+  parsedPhone      String?       @map("parsed_phone") @db.VarChar(50)
+  parsedSkills     Json          @default("[]") @map("parsed_skills")
+  parsedExperience Int?          @map("parsed_experience")
+  parsedEducation  String?       @map("parsed_education") @db.VarChar(255)
+  parsedSummary    String?       @map("parsed_summary") @db.Text
+  rawText          String?       @map("raw_text") @db.Text
+  atsBaseScore     Float?        @map("ats_base_score")
+  
+  uploadedAt       DateTime      @default(now()) @map("uploaded_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  
+  talent           TalentProfile @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  applications     Application[]
 
   @@map("resumes")
 }
@@ -154,23 +196,36 @@ model ContactMessage {
 }
 
 model Job {
-  id           String   @id @default(uuid()) @db.Uuid
-  title        String   @db.VarChar(255)
-  company      String   @db.VarChar(255)
-  industry     String?  @db.VarChar(100)
-  category     String   @db.VarChar(100)
-  location     String   @db.VarChar(255)
-  mode         String   @db.VarChar(50)
-  type         String   @db.VarChar(50)
-  salary       String?  @db.VarChar(100)
-  vacancies    Int      @default(1)
-  description  String   @db.Text
-  requirements Json     @default("[]")
-  benefits     Json     @default("[]")
-  isPublished  Boolean  @default(true)  @map("is_published")
-  postedAt     DateTime @default(now()) @map("posted_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt      @map("updated_at")
+  id                  String   @id @default(uuid()) @db.Uuid
+  title               String   @db.VarChar(255)
+  company             String   @db.VarChar(255)
+  industry            String?  @db.VarChar(100)
+  category            String   @db.VarChar(100)
+  location            String   @db.VarChar(255)
+  mode                String   @db.VarChar(50)
+  type                String   @db.VarChar(50)
+  salary              String?  @db.VarChar(100)
+  salaryMin           Int?     @map("salary_min")
+  salaryMax           Int?     @map("salary_max")
+  salaryCurrency      String?  @default("USD") @map("salary_currency") @db.VarChar(10)
+  vacancies           Int      @default(1)
+  description         String   @db.Text
+  requirements        Json     @default("[]")
+  benefits            Json     @default("[]")
+  skills              Json     @default("[]")
+  experienceMin       Int?     @map("experience_min")
+  experienceMax       Int?     @map("experience_max")
+  educationLevel      String?  @map("education_level") @db.VarChar(100)
+  status              JobStatus @default(DRAFT)
+  isPublished         Boolean  @default(false) @map("is_published")
+  applicationDeadline DateTime? @map("application_deadline")
+  publishedAt         DateTime? @map("published_at")
+  closedAt            DateTime? @map("closed_at")
+  postedAt            DateTime @default(now()) @map("posted_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt      @map("updated_at")
+
+  applications        Application[]
 
   @@map("jobs")
 }
@@ -198,3 +253,55 @@ model AdminProfile {
   @@map("admin_profiles")
 }
 
+model Application {
+  id                  String            @id @default(uuid()) @db.Uuid
+  jobId               String            @map("job_id") @db.Uuid
+  talentId            String            @map("talent_id") @db.Uuid
+  resumeId            String            @map("resume_id") @db.Uuid
+  coverLetter         String?           @map("cover_letter") @db.Text
+  status              ApplicationStatus @default(APPLIED)
+  
+  atsScore            Float?            @map("ats_score")
+  atsSkillMatch       Float?            @map("ats_skill_match")
+  atsExperienceMatch  Float?            @map("ats_experience_match")
+  atsEducationMatch   Float?            @map("ats_education_match")
+  atsKeywordMatch     Float?            @map("ats_keyword_match")
+  atsBreakdown        Json?             @map("ats_breakdown")
+  
+  adminNotes          String?           @map("admin_notes") @db.Text
+  reviewedAt          DateTime?         @map("reviewed_at")
+  reviewedBy          String?           @map("reviewed_by") @db.VarChar(255)
+  
+  interviewDate       DateTime?         @map("interview_date")
+  interviewType       String?           @map("interview_type") @db.VarChar(50)
+  interviewLink       String?           @map("interview_link") @db.Text
+  interviewNotes      String?           @map("interview_notes") @db.Text
+  
+  offerSentAt         DateTime?         @map("offer_sent_at")
+  offerDetails        Json?             @map("offer_details")
+  
+  appliedAt           DateTime          @default(now()) @map("applied_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  talent              TalentProfile     @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  resume              Resume            @relation(fields: [resumeId], references: [id])
+  statusHistory       ApplicationStatusHistory[]
+
+  @@unique([jobId, talentId])
+  @@map("applications")
+}
+
+model ApplicationStatusHistory {
+  id            String            @id @default(uuid()) @db.Uuid
+  applicationId String            @map("application_id") @db.Uuid
+  fromStatus    ApplicationStatus? @map("from_status")
+  toStatus      ApplicationStatus  @map("to_status")
+  changedBy     String            @map("changed_by") @db.VarChar(255)
+  note          String?           @db.Text
+  changedAt     DateTime          @default(now()) @map("changed_at")
+
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("application_status_history")
+}
