@@ -228,10 +228,9 @@ export class AuthService {
   // ─── Sign In ──────────────────────────────────────────────────────────────
 
   async signIn(dto: SignInDto): Promise<AuthResult> {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
-        role: dto.role as UserRole
       },
       include: {
         talentProfile: true,
@@ -243,6 +242,18 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    if (user.role !== dto.role) {
+      if (user.role === UserRole.ADMIN) {
+        throw new ForbiddenException('Please log in via the Admin Panel.');
+      } else if (dto.role === UserRole.ADMIN) {
+        throw new ForbiddenException('You are not authorized to access the Admin Panel.');
+      } else {
+        throw new ForbiddenException(`Please log in as ${user.role.charAt(0) + user.role.slice(1).toLowerCase()}.`);
+      }
+    }
+
+
 
     if (!user.isActive) {
       throw new UnauthorizedException('Account has been deactivated');
