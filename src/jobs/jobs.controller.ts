@@ -19,6 +19,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+
+@ApiTags('Jobs')
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) { }
@@ -27,6 +30,14 @@ export class JobsController {
 
   /** GET /jobs — public listing with search/filter/pagination */
   @Get()
+  @ApiOperation({ summary: 'Get all published jobs with filtering and pagination' })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'category', required: false, type: String })
+  @ApiQuery({ name: 'mode', required: false, type: String })
+  @ApiQuery({ name: 'published', required: false, type: String, description: 'Admin only filter for published status' })
+  @ApiResponse({ status: 200, description: 'Paginated list of jobs' })
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -42,12 +53,19 @@ export class JobsController {
   @Get('stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get job statistics (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Job statistics including total, published, unpublished, and vacancies' })
   getStats() {
     return this.jobsService.getStats();
   }
 
   /** GET /jobs/:id — public single job */
   @Get(':id')
+  @ApiOperation({ summary: 'Get a specific job by ID' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Job details' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.jobsService.findOne(id);
   }
@@ -58,7 +76,10 @@ export class JobsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new job (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Job created successfully' })
   create(@Body() dto: CreateJobDto) {
     return this.jobsService.create(dto);
   }
@@ -67,6 +88,10 @@ export class JobsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update an existing job (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Job updated successfully' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateJobDto) {
     return this.jobsService.update(id, dto);
   }
@@ -75,7 +100,11 @@ export class JobsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a job (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Job deleted successfully' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.jobsService.remove(id);
   }

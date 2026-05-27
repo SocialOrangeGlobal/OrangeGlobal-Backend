@@ -137,7 +137,7 @@ You can access the full interactive Swagger OpenAPI documentation live in produc
 ```text
 https://orangeglobal-backend.onrender.com/api/docs
 ```
-*(Includes interactive endpoints for Authentication, Users CRUD, Profile Uploads, and Maintenance).*
+*(Includes interactive endpoints and comprehensive schema documentation for Authentication, Jobs, Applications, Dashboard, Users CRUD, and Maintenance).*
 
 ---
 

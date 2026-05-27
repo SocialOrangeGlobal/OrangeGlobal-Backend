@@ -7,10 +7,12 @@ export class AdminUpdateUserDto {
   @IsString()
   email?: string;
 
+  @ApiPropertyOptional({ example: true, description: 'User active status' })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Additional profile data for update' })
   @IsOptional()
   profileData?: any;
 }

@@ -4,6 +4,8 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
+  ApiParam
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -72,6 +74,10 @@ export class UsersController {
   @Get('talents')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get all talents (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated list of talents' })
   findAllTalents(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
@@ -83,6 +89,10 @@ export class UsersController {
   @Get('employers')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get all employers (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated list of employers' })
   findAllEmployers(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
@@ -94,6 +104,9 @@ export class UsersController {
   @Get(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get details of a single user (Admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User details' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   findOneUser(@Param('id') id: string) {
     return this.usersService.findOneUser(id);
   }
@@ -101,6 +114,9 @@ export class UsersController {
   @Patch(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update a user (Admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   adminUpdateUser(
     @Param('id') id: string,
     @Body() dto: AdminUpdateUserDto,
@@ -111,6 +127,8 @@ export class UsersController {
   @Delete(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete a user (Admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
   deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUser(id);
   }

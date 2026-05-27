@@ -47,7 +47,6 @@ export class AuthService {
   ) { }
 
   // ─── Sign Up: Talent ──────────────────────────────────────────────────────
-
   async signUpTalent(dto: SignUpTalentDto): Promise<AuthResult> {
     await this.assertEmailNotTaken(dto.email);
 
@@ -164,7 +163,6 @@ export class AuthService {
   }
 
   // ─── Sign Up: Employer ────────────────────────────────────────────────────
-
   async signUpEmployer(dto: SignUpEmployerDto): Promise<AuthResult> {
     await this.assertEmailNotTaken(dto.email);
 
@@ -226,7 +224,6 @@ export class AuthService {
   }
 
   // ─── Sign In ──────────────────────────────────────────────────────────────
-
   async signIn(dto: SignInDto): Promise<AuthResult> {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -296,7 +293,6 @@ export class AuthService {
   }
 
   // ─── Refresh Tokens ───────────────────────────────────────────────────────
-
   async refreshTokens(currentUser: AuthenticatedUser): Promise<AuthResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: currentUser.id },
@@ -343,7 +339,6 @@ export class AuthService {
   }
 
   // ─── Sign Out ─────────────────────────────────────────────────────────────
-
   async signOut(userId: string): Promise<{ message: string }> {
     await this.prisma.user.update({
       where: { id: userId },
@@ -354,7 +349,6 @@ export class AuthService {
   }
 
   // ─── Email Verification ───────────────────────────────────────────────────
-
   async verifyEmail(token: string): Promise<{ message: string }> {
     const user = await this.prisma.user.findFirst({
       where: {
