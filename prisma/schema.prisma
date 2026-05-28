@@ -226,6 +226,7 @@ model Job {
   educationLevel      String?  @map("education_level") @db.VarChar(100)
   status              JobStatus @default(DRAFT)
   isPublished         Boolean  @default(false) @map("is_published")
+  companyLogo         String?  @map("company_logo") @db.Text
   applicationDeadline DateTime? @map("application_deadline")
   publishedAt         DateTime? @map("published_at")
   closedAt            DateTime? @map("closed_at")

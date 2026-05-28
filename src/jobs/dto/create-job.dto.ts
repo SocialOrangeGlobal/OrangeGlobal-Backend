@@ -75,4 +75,9 @@ export class CreateJobDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @ApiPropertyOptional({ example: 'https://images.pexels.com/photos/1509534/pexels-photo-1509534.jpeg', description: 'URL of the company logo' })
+  @IsOptional()
+  @IsString()
+  companyLogo?: string;
 }

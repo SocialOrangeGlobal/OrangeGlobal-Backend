@@ -27,6 +27,7 @@ export class JobsService {
         requirements: dto.requirements ?? [],
         benefits: dto.benefits ?? [],
         isPublished: dto.isPublished ?? true,
+        companyLogo: dto.companyLogo,
       },
     });
 
@@ -158,6 +159,7 @@ export class JobsService {
         ...(dto.requirements !== undefined && { requirements: dto.requirements }),
         ...(dto.benefits !== undefined && { benefits: dto.benefits }),
         ...(dto.isPublished !== undefined && { isPublished: dto.isPublished }),
+        ...(dto.companyLogo !== undefined && { companyLogo: dto.companyLogo }),
       },
     });
 
