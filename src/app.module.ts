@@ -13,7 +13,9 @@ import { JobsModule } from './jobs/jobs.module';
 import { AtsModule } from './ats/ats.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
-
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -48,6 +50,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AtsModule,
     ApplicationsModule,
     DashboardModule,
+    EventEmitterModule.forRoot(),
+    NotificationsModule,
+    ChatbotModule,
   ],
 })
 export class AppModule { }

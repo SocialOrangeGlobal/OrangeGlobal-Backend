@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class JobsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async create(dto: CreateJobDto) {
     const job = await this.prisma.job.create({
@@ -25,7 +29,36 @@ export class JobsService {
         isPublished: dto.isPublished ?? true,
       },
     });
+
+    // If the job is published immediately, notify all talent users
+    if (job.isPublished) {
+      this.emitJobPostedNotifications(job).catch(console.error);
+    }
+
     return { success: true, data: job };
+  }
+
+  /** Notify every TALENT user that a new job is available */
+  private async emitJobPostedNotifications(job: any) {
+    const talentUsers = await this.prisma.user.findMany({
+      where: { role: 'TALENT' },
+      select: { id: true },
+    });
+
+    const notifPayload = {
+      title: '🚀 New Job Available!',
+      message: `${job.title} at ${job.company} – ${job.location}. Check it out now!`,
+      type: 'SYSTEM_ALERT',
+      link: '/jobs',
+    };
+
+    // Save a notification row for each talent user (fire-and-forget per user)
+    for (const u of talentUsers) {
+      this.eventEmitter.emit('notification.send', {
+        userId: u.id,
+        ...notifPayload,
+      });
+    }
   }
 
   async findAll(query: {
@@ -106,7 +139,9 @@ export class JobsService {
   }
 
   async update(id: string, dto: UpdateJobDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    const wasUnpublished = !existing.data.isPublished;
+
     const job = await this.prisma.job.update({
       where: { id },
       data: {
@@ -125,6 +160,12 @@ export class JobsService {
         ...(dto.isPublished !== undefined && { isPublished: dto.isPublished }),
       },
     });
+
+    // If job just got published for the first time, notify talent users
+    if (wasUnpublished && dto.isPublished === true) {
+      this.emitJobPostedNotifications(job).catch(console.error);
+    }
+
     return { success: true, data: job };
   }
 
@@ -135,12 +176,13 @@ export class JobsService {
   }
 
   async getStats() {
-    const [total, published, unpublished, vacanciesAgg] = await this.prisma.$transaction([
-      this.prisma.job.count(),
-      this.prisma.job.count({ where: { isPublished: true } }),
-      this.prisma.job.count({ where: { isPublished: false } }),
-      this.prisma.job.aggregate({ _sum: { vacancies: true } }),
-    ]);
+    const [total, published, unpublished, vacanciesAgg] =
+      await this.prisma.$transaction([
+        this.prisma.job.count(),
+        this.prisma.job.count({ where: { isPublished: true } }),
+        this.prisma.job.count({ where: { isPublished: false } }),
+        this.prisma.job.aggregate({ _sum: { vacancies: true } }),
+      ]);
     return {
       success: true,
       data: {

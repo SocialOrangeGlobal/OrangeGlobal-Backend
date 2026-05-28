@@ -39,6 +39,13 @@ enum ResumeStatus {
   FAILED
 }
 
+enum NotificationType {
+  NEW_APPLICATION
+  APPLICATION_UPDATE
+  SYSTEM_ALERT
+  MESSAGE
+}
+
 model User {
   id               String           @id @default(uuid()) @db.Uuid
   email            String           @unique @db.VarChar(255)
@@ -56,6 +63,7 @@ model User {
   talentProfile    TalentProfile?
   employerProfile  EmployerProfile?
   adminProfile     AdminProfile?
+  notifications    Notification[]
 
   @@map("users")
 }
@@ -304,4 +312,19 @@ model ApplicationStatusHistory {
   application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("application_status_history")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  title     String           @db.VarChar(255)
+  message   String           @db.Text
+  type      NotificationType @default(SYSTEM_ALERT)
+  isRead    Boolean          @default(false) @map("is_read")
+  link      String?          @db.Text
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }

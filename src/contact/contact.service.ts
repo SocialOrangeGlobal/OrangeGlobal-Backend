@@ -39,4 +39,27 @@ export class ContactService {
       id: savedMessage.id,
     };
   }
+
+  async findAll(page = 1, limit = 10) {
+    this.logger.log(`Fetching paginated contact messages for admin`);
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.contactMessage.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.contactMessage.count(),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    };
+  }
 }
