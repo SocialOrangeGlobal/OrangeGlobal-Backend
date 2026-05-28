@@ -263,10 +263,10 @@ export class SignUpTalentDto {
   @IsNotEmpty()
   visaStatus: string;
 
-  @ApiProperty({ description: '[Section 6: Visa & Work Rights] Legal Work Rights (e.g. Require Sponsorship)', example: 'Require Sponsorship' })
+  @ApiPropertyOptional({ description: '[Section 6: Visa & Work Rights] Legal Work Rights (e.g. Require Sponsorship)', example: 'Require Sponsorship' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  legalWorkRights: string;
+  legalWorkRights?: string;
 
   // ─── SECTION 7: RELOCATION & BACKGROUND ───────────────────────────────────────
   @ApiProperty({ description: '[Section 7: Relocation & Background] Open to Relocation?', example: 'Yes' })
