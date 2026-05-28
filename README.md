@@ -70,6 +70,9 @@ PORT=3001
 # ─── Frontend Origin (CORS) ───────────────────────
 FRONTEND_URL=http://localhost:5173
 
+# ─── Admin Origin (CORS) ───────────────────────
+ADMIN_URL=http://localhost:5174
+
 # ─── Prisma / Supabase ────────────────────────────
 # Official Supabase + Prisma connection format
 DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres"
@@ -93,6 +96,9 @@ RESEND_API_KEY="re_your_api_key_here"
 # ─── Supabase Storage ─────────────────────────────
 SUPABASE_URL="https://[project-ref].supabase.co"
 SUPABASE_SERVICE_ROLE_KEY="replace_with_your_supabase_service_role_key_here"
+
+# ─── Google Gemini AI ────────────────────────────
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ---
