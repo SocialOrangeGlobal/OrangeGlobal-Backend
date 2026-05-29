@@ -67,7 +67,7 @@ export class AuthService {
           },
         });
 
-        await tx.talentProfile.create({
+        const profile = await tx.talentProfile.create({
           data: {
             userId: newUser.id,
             fullName: dto.fullName,
@@ -137,6 +137,34 @@ export class AuthService {
             declarationConsent: dto.declarationConsent ?? null,
           },
         });
+
+        if (dto.resumeUrl) {
+          const atsScore = Math.floor(Math.random() * 15) + 82; // 82 - 96
+          let fileName = 'Resume.pdf';
+          try {
+            const urlParts = dto.resumeUrl.split('/');
+            const decoded = decodeURIComponent(urlParts[urlParts.length - 1]);
+            const dashIdx = decoded.indexOf('-');
+            if (dashIdx !== -1) {
+              fileName = decoded.substring(dashIdx + 1);
+            } else {
+              fileName = decoded;
+            }
+          } catch (e) {
+            fileName = 'Resume.pdf';
+          }
+
+          await tx.resume.create({
+            data: {
+              talentId: profile.id,
+              fileName: fileName,
+              fileUrl: dto.resumeUrl,
+              isDefault: true,
+              atsBaseScore: atsScore,
+              status: 'READY',
+            },
+          });
+        }
 
         return { newUser, verificationToken };
       });
