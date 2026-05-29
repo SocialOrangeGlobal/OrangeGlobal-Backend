@@ -335,15 +335,15 @@ export class SignUpTalentDto {
   @IsString()
   visaUrl?: string;
 
-  @ApiPropertyOptional({ description: '[Section 8: Documents] Educational Certificates Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/edu_certs.pdf' })
-  @IsOptional()
+  @ApiProperty({ description: '[Section 8: Documents] Educational Certificates Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/edu_certs.pdf' })
   @IsString()
-  eduCertUrl?: string;
+  @IsNotEmpty()
+  eduCertUrl: string;
 
-  @ApiPropertyOptional({ description: '[Section 8: Documents] Employment / Experience Letters Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/emp_letters.pdf' })
-  @IsOptional()
+  @ApiProperty({ description: '[Section 8: Documents] Employment / Experience Letters Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/emp_letters.pdf' })
   @IsString()
-  empCertUrl?: string;
+  @IsNotEmpty()
+  empCertUrl: string;
 
   @ApiPropertyOptional({ description: '[Section 8: Documents] English Test Results Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/english_test.pdf' })
   @IsOptional()
