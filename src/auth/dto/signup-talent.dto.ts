@@ -221,10 +221,10 @@ export class SignUpTalentDto {
   @IsNotEmpty()
   fieldOfStudy: string;
 
-  @ApiProperty({ description: '[Section 4: Education] Institution Name', example: 'Stanford University' })
+  @ApiPropertyOptional({ description: '[Section 4: Education] Institution Name', example: 'Stanford University' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  institutionName: string;
+  institutionName?: string;
 
   @ApiPropertyOptional({ description: '[Section 4: Education] Year of Graduation', example: '2018' })
   @IsOptional()
@@ -294,15 +294,15 @@ export class SignUpTalentDto {
   @IsString()
   visaRefusalDetails?: string;
 
-  @ApiPropertyOptional({ description: '[Section 7: Relocation & Background] Relocating Alone or with Family?', example: 'Alone' })
-  @IsOptional()
-  @IsString()
-  relocateAloneOrFamily?: string;
-
-  @ApiProperty({ description: '[Section 7: Relocation & Background] Do you hold a valid passport?', example: 'Yes' })
+  @ApiProperty({ description: '[Section 7: Relocation & Background] Relocating Alone or with Family?', example: 'Alone' })
   @IsString()
   @IsNotEmpty()
-  validPassport: string;
+  relocateAloneOrFamily: string;
+
+  @ApiPropertyOptional({ description: '[Section 7: Relocation & Background] Do you hold a valid passport?', example: 'Yes' })
+  @IsOptional()
+  @IsString()
+  validPassport?: string;
 
   @ApiPropertyOptional({ description: '[Section 7: Relocation & Background] Passport Expiry Date', example: '2030-05-15' })
   @IsOptional()
