@@ -33,8 +33,9 @@ export class TransformInterceptor<T>
             ? payload.message
             : 'Request successful';
 
-        // Remove top-level 'message' from data to avoid duplication
-        if (payload?.message) {
+        // Remove top-level 'message' from data to avoid duplication,
+        // but only if it's not a database entity (entities usually have 'createdAt')
+        if (payload?.message && !payload?.createdAt) {
           const { message: _msg, ...rest } = payload;
           return {
             success: true as const,

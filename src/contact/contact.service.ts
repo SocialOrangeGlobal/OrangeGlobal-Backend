@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto';
+import { ReplyContactMessageDto } from './dto/reply-contact-message.dto';
+import { UpdateEnquiryDto } from './dto/update-enquiry.dto';
+import { UserRole } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ContactService {
@@ -10,6 +14,7 @@ export class ContactService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: CreateContactMessageDto) {
@@ -23,6 +28,9 @@ export class ContactService {
         phone: dto.phone,
         subject: dto.subject,
         message: dto.message,
+        type: dto.type || 'GENERAL_QUERY',
+        status: 'PENDING',
+        userId: dto.userId || null,
       },
     });
 
@@ -31,7 +39,6 @@ export class ContactService {
       await this.mailService.sendContactNotificationEmail(dto);
     } catch (error: any) {
       this.logger.error(`Failed to send contact notification email: ${error.message}`);
-      // Don't fail the request if mail fails, as the message is already saved in the database
     }
 
     return {
@@ -40,19 +47,50 @@ export class ContactService {
     };
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, type?: string, status?: string, search?: string) {
     this.logger.log(`Fetching paginated contact messages for admin`);
     const skip = (page - 1) * limit;
 
+    const where: any = {};
+    if (type) {
+      where.type = type;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     const [items, total] = await Promise.all([
       this.prisma.contactMessage.findMany({
+        where,
+        include: {
+          replies: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              sender: {
+                select: {
+                  email: true,
+                  role: true,
+                  adminProfile: { select: { firstName: true, lastName: true } },
+                  talentProfile: { select: { fullName: true } },
+                },
+              },
+            },
+          },
+        },
         orderBy: {
           createdAt: 'desc',
         },
         skip,
         take: limit,
       }),
-      this.prisma.contactMessage.count(),
+      this.prisma.contactMessage.count({ where }),
     ]);
 
     return {
@@ -61,5 +99,110 @@ export class ContactService {
       page,
       pages: Math.ceil(total / limit),
     };
+  }
+
+  async updateEnquiry(id: string, dto: UpdateEnquiryDto) {
+    const enquiry = await this.prisma.contactMessage.findUnique({
+      where: { id },
+    });
+
+    if (!enquiry) {
+      throw new NotFoundException(`Enquiry with ID ${id} not found`);
+    }
+
+    return this.prisma.contactMessage.update({
+      where: { id },
+      data: {
+        ...(dto.status && { status: dto.status }),
+        ...(dto.notes !== undefined && { notes: dto.notes }),
+      },
+    });
+  }
+
+  async addReply(id: string, senderId: string, senderRole: UserRole, dto: ReplyContactMessageDto) {
+    const enquiry = await this.prisma.contactMessage.findUnique({
+      where: { id },
+    });
+
+    if (!enquiry) {
+      throw new NotFoundException(`Enquiry with ID ${id} not found`);
+    }
+
+    const reply = await this.prisma.contactReply.create({
+      data: {
+        contactMessageId: id,
+        senderId,
+        senderRole,
+        message: dto.message,
+      },
+      include: {
+        sender: {
+          select: {
+            email: true,
+            role: true,
+            adminProfile: { select: { firstName: true, lastName: true } },
+            talentProfile: { select: { fullName: true } },
+          },
+        },
+      },
+    });
+
+    // Emit live chat reply event for real-time WebSocket pushing
+    this.eventEmitter.emit('chat.reply', {
+      enquiry,
+      reply,
+      senderRole,
+    });
+
+    return reply;
+  }
+
+  async findOne(id: string) {
+    const enquiry = await this.prisma.contactMessage.findUnique({
+      where: { id },
+      include: {
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            sender: {
+              select: {
+                email: true,
+                role: true,
+                adminProfile: { select: { firstName: true, lastName: true } },
+                talentProfile: { select: { fullName: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!enquiry) {
+      throw new NotFoundException(`Enquiry with ID ${id} not found`);
+    }
+
+    return enquiry;
+  }
+
+  async findUserMessages(userId: string) {
+    return this.prisma.contactMessage.findMany({
+      where: { userId },
+      include: {
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            sender: {
+              select: {
+                email: true,
+                role: true,
+                adminProfile: { select: { firstName: true, lastName: true } },
+                talentProfile: { select: { fullName: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }

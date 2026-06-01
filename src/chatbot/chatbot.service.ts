@@ -32,6 +32,8 @@ enum Intent {
   APP_STATUS = 'APP_STATUS',  // "what's my application status?"
   COMPANY = 'COMPANY',     // "what services does Orange Global offer?"
   CONTACT = 'CONTACT',     // "how do I contact support?"
+  MIGRATION = 'MIGRATION',  // visa details and migration options
+  PROFILE = 'PROFILE',      // talent profile details
   GENERAL = 'GENERAL',     // anything else
 }
 
@@ -60,6 +62,25 @@ export class ChatbotService {
   private readonly adminUrl: string;
   /** Pre-built zero-cost static responses keyed by Intent */
   private readonly staticResponses: Partial<Record<Intent, string>>;
+
+  private readonly migrationVisas = [
+    { code: '485', title: 'Graduate Temporary visa (Subclass 485)', category: 'Skilled Visa', desc: 'Allows international students who have completed their studies in Australia to live, study, and work temporarily.', link: '/migration/skilled-visa/graduate-temporary-485-visa' },
+    { code: '189', title: 'Skilled Independent visa (Subclass 189)', category: 'Skilled Visa', desc: 'Points-tested visa for skilled workers who are not sponsored by an employer, state/territory, or family member. Grants PR.', link: '/migration/skilled-visa/skilled-independent-visa-189' },
+    { code: '190', title: 'Skilled Nominated visa (Subclass 190)', category: 'Skilled Visa', desc: 'Points-tested permanent visa for skilled workers nominated by an Australian state or territory government.', link: '/migration/skilled-visa/skilled-nominated-visa190' },
+    { code: '491', title: 'Skilled Work Regional visa (Subclass 491)', category: 'Skilled Visa', desc: 'Provisional visa for skilled workers nominated by a state/territory government or sponsored by an eligible family member to live and work in regional Australia.', link: '/migration/skilled-visa/regional-visas-491-visa' },
+    { code: '482', title: 'Temporary Skill Shortage visa (Subclass 482 / TSS)', category: 'Employer Sponsored', desc: 'Enables employers to address labor shortages by bringing in genuinely skilled workers where they cannot find an appropriately skilled Australian.', link: '/migration/employer-sponsored/tss-482-visa' },
+    { code: '186', title: 'Employer Nomination Scheme visa (Subclass 186)', category: 'Employer Sponsored', desc: 'Permanent residency visa for skilled workers sponsored by an Australian employer.', link: '/migration/employer-sponsored/186-visa-skill-requirements' },
+    { code: '494', title: 'Skilled Employer Sponsored Regional visa (Subclass 494)', category: 'Employer Sponsored', desc: 'Provisional regional visa sponsored by an employer in regional Australia.', link: '/migration/employer-sponsored/494-visa' },
+    { code: '143', title: 'Contributory Parent visa (Subclass 143)', category: 'Family Visa', desc: 'Allows parents of settled Australian citizens, PRs, or eligible New Zealand citizens to live in Australia permanently.', link: '/migration/family-visa/parent-visa-australia/contributory-parent-visa-subclass-143' },
+    { code: '300', title: 'Prospective Marriage visa (Subclass 300)', category: 'Family Visa', desc: 'Allows people to come to Australia to marry their prospective spouse.', link: '/migration/family-visa/partner-visa-australia/fiance-prospective-spouse-subclass-300' },
+    { code: '309', title: 'Partner visa (Offshore Subclass 309/100)', category: 'Family Visa', desc: 'Allows the partner or spouse of an Australian citizen, PR, or eligible NZ citizen to live in Australia.', link: '/migration/family-visa/partner-visa-australia/partner-visa-offshore-309-100' },
+    { code: '820', title: 'Partner visa (Onshore Subclass 820/801)', category: 'Family Visa', desc: 'Allows the partner or spouse of an Australian citizen, PR, or eligible NZ citizen to live in Australia onshore.', link: '/migration/family-visa/partner-visa-australia/partner-visa-onshore-820-and-801' },
+    { code: '476', title: 'Recognised Graduate visa (Subclass 476)', category: 'Skilled Visa', desc: 'Allows recent engineering graduates of recognized universities to gain up to 18 months of skilled work experience in Australia.', link: '/migration/skilled-visa/recognised-graduate-476-visa' },
+    { code: '887', title: 'Skilled Regional visa (Subclass 887)', category: 'Skilled Visa', desc: 'Permanent visa for skilled workers who have lived and worked in specified regional areas of Australia.', link: '/migration/skilled-visa/skilled-regional-887-visa' },
+    { code: '191', title: 'Skilled Regional Visa (Subclass 191)', category: 'Skilled Visa', desc: 'Permanent visa for applicants who have held an eligible regional provisional visa (like subclass 491).', link: '/migration/skilled-visa/regional-visas-191-visa' },
+    { code: '124', title: 'Distinguished Talent visa (Subclass 124)', category: 'Skilled Visa', desc: 'Permanent visa for people who have an internationally recognized record of exceptional and outstanding achievement in their field.', link: '/migration/skilled-visa/distinguished-talent-visa-subclass-124' },
+    { code: 'gti', title: 'Global Talent visa (GTI)', category: 'Skilled Visa', desc: 'Fast-tracked permanent visa for highly skilled professionals to live and work permanently in Australia.', link: '/migration/skilled-visa/global-talent-visa-gti' },
+  ];
 
   // In-memory stores (lightweight; cleared on process restart)
   private readonly sessions = new Map<string, SessionEntry>();
@@ -158,7 +179,7 @@ export class ChatbotService {
     this.saveHistory(sessionId, message, reply);
 
     // ── 9. Cache non-personalised responses ──
-    if (!userId || intent === Intent.JOB_SEARCH || intent === Intent.COMPANY || intent === Intent.GENERAL) {
+    if (!userId || intent === Intent.JOB_SEARCH || intent === Intent.COMPANY || intent === Intent.MIGRATION || intent === Intent.GENERAL) {
       this.setCache(this.responseCache, cacheKey, reply, RESP_CACHE_TTL);
     }
 
@@ -184,6 +205,16 @@ export class ChatbotService {
       /\b(my application|application status|have i been|applied|interview scheduled|shortlisted|rejected|offer letter|hiring decision|where.{0,20}application)\b/.test(m)
     )
       return Intent.APP_STATUS;
+
+    if (
+      /\b(my profile|my resume|my details|my skills|profile score|pro score|verified expert|my education|my experience|change my profile|edit my profile)\b/.test(m)
+    )
+      return Intent.PROFILE;
+
+    if (
+      /\b(visa|subclass|migration|pr in australia|permanent residency|skilled independent|regional visa|sponsored visa|partner visa|parent visa|bridging visa|485|189|190|482|186|491|494|143|300|309|820|801)\b/.test(m)
+    )
+      return Intent.MIGRATION;
 
     if (
       /\b(job|jobs|vacancy|vacancies|opening|openings|role|roles|position|career|hiring|recruit|remote|hybrid|on.?site|full.?time|part.?time|contract|work available|can i apply)\b/.test(m)
@@ -213,6 +244,12 @@ export class ChatbotService {
       case Intent.APP_STATUS:
         return this.applicationContext(userId);
 
+      case Intent.PROFILE:
+        return this.talentProfileContext(userId);
+
+      case Intent.MIGRATION:
+        return this.getMigrationContext(message);
+
       case Intent.COMPANY:
         return (
           `Orange Global: world-class staffing & consulting firm. ` +
@@ -227,6 +264,104 @@ export class ChatbotService {
         return `Orange Global has ${total} active jobs. Browse: ${this.staffUrl}/jobs`;
       }
     }
+  }
+
+  private getMigrationContext(message: string): string {
+    const m = message.toLowerCase();
+    const matches = this.migrationVisas.filter(
+      (v) => m.includes(v.code) || m.includes(v.title.toLowerCase()) || (v.code === '309' && m.includes('offshore')) || (v.code === '820' && m.includes('onshore'))
+    );
+
+    if (matches.length > 0) {
+      const lines = matches.map(
+        (v) => `• [${v.title}](${this.staffUrl}${v.link}) [${v.category}]: ${v.desc}`
+      ).join('\n');
+      return `Found the following visa options matching query:\n${lines}`;
+    }
+
+    return [
+      `Australian Migration Pathways we support:`,
+      `1. **Skilled Visas**: For independent workers, state nominees, and regional workers (Subclass 189, 190, 491, 191, 485, 476).`,
+      `2. **Employer Sponsored**: TSS 482, ENS 186, and Regional 494 visas.`,
+      `3. **Family Visas**: Partner visas (Onshore 820/801, Offshore 309/100, Prospective Subclass 300) and Parent visas (Subclass 143/173).`,
+      `More info: [Migration Page](${this.staffUrl}/migration/skilled-visa/graduate-temporary-485-visa)`
+    ].join('\n');
+  }
+
+  private async talentProfileContext(userId?: string): Promise<string> {
+    if (!userId)
+      return `Not signed in. Sign in to view your profile: ${this.staffUrl}/signin`;
+
+    const profile = await this.prisma.talentProfile.findUnique({
+      where: { userId },
+      select: {
+        fullName: true,
+        jobTitle: true,
+        skills: true,
+        educations: true,
+        experiences: true,
+      },
+    });
+
+    if (!profile)
+      return `No profile found. Complete profile: ${this.staffUrl}/manage-profile`;
+
+    const score = this.calculateProfileScore(profile);
+    const skillsList = profile.skills.length > 0 ? profile.skills.join(', ') : 'None';
+
+    let eduCount = 0;
+    try {
+      const edus = typeof profile.educations === 'string' ? JSON.parse(profile.educations) : profile.educations;
+      eduCount = Array.isArray(edus) ? edus.length : 0;
+    } catch {
+      eduCount = Array.isArray(profile.educations) ? profile.educations.length : 0;
+    }
+
+    let expCount = 0;
+    try {
+      const exps = typeof profile.experiences === 'string' ? JSON.parse(profile.experiences) : profile.experiences;
+      expCount = Array.isArray(exps) ? exps.length : 0;
+    } catch {
+      expCount = Array.isArray(profile.experiences) ? profile.experiences.length : 0;
+    }
+
+    return [
+      `User Profile Details:`,
+      `- Name: ${profile.fullName || 'Talent User'}`,
+      `- Title: ${profile.jobTitle || 'Job Seeker'}`,
+      `- Profile Completion Score: ${score}% (${score >= 80 ? 'Verified Expert' : 'Building Profile'})`,
+      `- Key Skills: ${skillsList}`,
+      `- Educations: ${eduCount} added`,
+      `- Experiences: ${expCount} added`,
+      `Edit Profile: ${this.staffUrl}/manage-profile`
+    ].join('\n');
+  }
+
+  private calculateProfileScore(profile: any): number {
+    let score = 20;
+    if (profile.fullName) score += 10;
+    if (profile.jobTitle) score += 10;
+    if (profile.skills && profile.skills.length > 0) score += 20;
+
+    let eduCount = 0;
+    try {
+      const edus = typeof profile.educations === 'string' ? JSON.parse(profile.educations) : profile.educations;
+      eduCount = Array.isArray(edus) ? edus.length : 0;
+    } catch {
+      eduCount = Array.isArray(profile.educations) ? profile.educations.length : 0;
+    }
+    if (eduCount > 0) score += 20;
+
+    let expCount = 0;
+    try {
+      const exps = typeof profile.experiences === 'string' ? JSON.parse(profile.experiences) : profile.experiences;
+      expCount = Array.isArray(exps) ? exps.length : 0;
+    } catch {
+      expCount = Array.isArray(profile.experiences) ? profile.experiences.length : 0;
+    }
+    if (expCount > 0) score += 20;
+
+    return score;
   }
 
   // ── Job search context (cached per filter combo) ──
@@ -422,6 +557,28 @@ export class ChatbotService {
         ].join('\n');
       }
 
+      case Intent.PROFILE: {
+        if (context.includes('Not signed in'))
+          return `To view your profile details, please [sign in →](${this.staffUrl}/signin).`;
+        return [
+          `Here is your **profile overview**:`,
+          ``,
+          context,
+          ``,
+          `Manage your profile: [Edit Profile →](${this.staffUrl}/manage-profile)`,
+        ].join('\n');
+      }
+
+      case Intent.MIGRATION: {
+        return [
+          `Here is the **migration and visa information**:`,
+          ``,
+          context,
+          ``,
+          `Explore all visa streams: [Migration Pathways →](${this.staffUrl}/migration/skilled-visa/graduate-temporary-485-visa)`,
+        ].join('\n');
+      }
+
       case Intent.COMPANY:
         return [
           `**Orange Global** specialises in:`,
@@ -440,9 +597,10 @@ export class ChatbotService {
           `Hi! I'm **Orange** 👋, your AI recruitment guide.`,
           ``,
           `Try asking me:`,
-          `- *"Show me remote developer jobs"*`,
+          `- *"Tell me about the Subclass 189 skilled visa"*`,
+          `- *"What is my profile completion score?"*`,
+          `- *"Show me remote software developer jobs"*`,
           `- *"What's my application status?"*`,
-          `- *"What services does Orange Global offer?"*`,
           ``,
           `[Browse all jobs →](${this.staffUrl}/jobs)`,
         ].join('\n');

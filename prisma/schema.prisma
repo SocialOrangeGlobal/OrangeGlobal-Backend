@@ -64,6 +64,8 @@ model User {
   employerProfile  EmployerProfile?
   adminProfile     AdminProfile?
   notifications    Notification[]
+  contactMessages  ContactMessage[]
+  contactReplies   ContactReply[]
 
   @@map("users")
 }
@@ -198,7 +200,14 @@ model ContactMessage {
   phone     String?  @db.VarChar(50)
   subject   String   @db.VarChar(255)
   message   String   @db.Text
+  type      String   @default("GENERAL_QUERY") @db.VarChar(50)
+  status    String   @default("PENDING") @db.VarChar(50)
+  notes     String?  @db.Text
+  userId    String?  @map("user_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies   ContactReply[]
 
   @@map("contact_messages")
 }
@@ -328,4 +337,18 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model ContactReply {
+  id               String         @id @default(uuid()) @db.Uuid
+  contactMessageId String         @map("contact_message_id") @db.Uuid
+  senderId         String         @map("sender_id") @db.Uuid
+  senderRole       UserRole       @map("sender_role")
+  message          String         @db.Text
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  contactMessage   ContactMessage @relation(fields: [contactMessageId], references: [id], onDelete: Cascade)
+  sender           User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("contact_replies")
 }

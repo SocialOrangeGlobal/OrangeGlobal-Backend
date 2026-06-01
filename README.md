@@ -12,6 +12,7 @@
 
 ## 🚀 Key Features & Recent Updates
 
+- **Public Jobs Search Endpoints**: Expanded the public `GET /jobs` endpoint to support dynamic, case-insensitive query parameter searches (`?search=query`), matching against job titles, locations, and company names. Returns search results wrapped in global response interceptors for dynamic search dropdown auto-completion on frontends.
 - **Orange AI Chatbot (Gemini Integration)**: A highly optimized, 5-layer AI chatbot powered by `gemini-2.0-flash-lite`. Features zero-cost regex intent classification, dynamic context builders (intent-scoped DB lookups), smart caching for jobs (Job Cache) and general queries (Response Cache), session persistence, and instant rule engine fallbacks. Fully configurable using `FRONTEND_URL` and `ADMIN_URL` environment origins.
 - **ATS / Resume Parsing**: AI-driven resume parsing (PDF/DOCX) using Google Gemini. Automatically extracts skills, matches profiles to job postings, and calculates an ATS Match Score.
 - **Dynamic Dashboard Analytics**: Centralized `GET /api/v1/dashboard/stats` endpoint providing real-time metrics on users, active jobs, and application status distributions.

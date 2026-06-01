@@ -103,6 +103,25 @@ export class NotificationsGateway
     );
   }
 
+  /** Send a custom event with data to a single user (all their open tabs). */
+  sendEventToUser(userId: string, event: string, data: any): void {
+    const sockets = this.userSockets.get(userId);
+    if (!sockets || sockets.size === 0) {
+      return;
+    }
+
+    const payload = JSON.stringify({
+      event,
+      data,
+    });
+
+    for (const socket of sockets) {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(payload);
+      }
+    }
+  }
+
   /** Broadcast a notification to every connected user. Used for job posts. */
   broadcastNotification(notification: any): void {
     const payload = JSON.stringify({

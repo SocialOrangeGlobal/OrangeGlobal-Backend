@@ -27,4 +27,14 @@ export class CreateContactMessageDto {
   @IsString()
   @MinLength(10, { message: 'Message must be at least 10 characters' })
   message: string;
+
+  @ApiProperty({ example: 'GENERAL_QUERY', required: false })
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiProperty({ example: 'user-uuid-here', required: false })
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
