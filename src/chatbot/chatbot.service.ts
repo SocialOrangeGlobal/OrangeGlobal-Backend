@@ -254,7 +254,7 @@ export class ChatbotService {
         return (
           `Orange Global: world-class staffing & consulting firm. ` +
           `Services: global talent delivery, executive search, direct placements, contract staffing, tech-transformation consulting. ` +
-          `Employers post jobs at ${this.adminUrl}. ` +
+          `Admin post jobs at Admin Dashboard. ` +
           `Job seekers browse at ${this.staffUrl}/jobs.`
         );
 
@@ -460,7 +460,6 @@ export class ChatbotService {
   // ─── Layer 3: Gemini Call with Retry ─────────────────────────────────────
   // Single-turn generateContent (no chat history overhead).
   // Retries once after 1.5 s on 429.
-
   private async callGemini(
     message: string,
     context: string,
@@ -497,7 +496,6 @@ export class ChatbotService {
   // ─── Layer 4: Compact Prompt Assembler ───────────────────────────────────
   // Target: ~220-280 input tokens total (system + context + optional history + user msg).
   // The system instruction is intentionally terse to save quota.
-
   private assemblePrompt(
     message: string,
     context: string,
@@ -526,7 +524,6 @@ export class ChatbotService {
 
   // ─── Layer 5: Rule Engine (zero-cost fallback) ────────────────────────────
   // Produces a solid, formatted response without any API call.
-
   private ruleEngine(intent: Intent, context: string): string {
     switch (intent) {
       case Intent.JOB_SEARCH: {
@@ -588,9 +585,9 @@ export class ChatbotService {
           `- 📝 Contract & temp staffing`,
           `- 💻 Technology transformation consulting`,
           ``,
-          `Employers, start hiring via the [Employer Portal →](${this.adminUrl})`,
+          `Employers, start hiring via the [Employer Portal →](Admin Portal)`,
         ].join('\n');
-
+        ``
       case Intent.GENERAL:
       default:
         return [
@@ -608,7 +605,6 @@ export class ChatbotService {
   }
 
   // ─── Session Manager ──────────────────────────────────────────────────────
-
   private getHistory(sessionId?: string): HistoryEntry[] {
     if (!sessionId) return [];
     this.evictExpiredSessions();
