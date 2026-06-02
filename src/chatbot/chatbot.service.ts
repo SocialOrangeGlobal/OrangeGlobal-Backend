@@ -121,8 +121,8 @@ export class ChatbotService {
       [Intent.CONTACT]: [
         `Our support team is here to help!`,
         ``,
-        `- 📧 **Email:** support@orangeglobal.co`,
-        `- 📝 **Contact Form:** [Open form →](${this.staffUrl}/#contact)`,
+        `- 📧 **Email:** info@orangeglobal.co`,
+        `- 📝 **Contact Form:** [Open form →](${this.staffUrl}/contact)`,
         ``,
         `We aim to respond within 1 business day.`,
       ].join('\n'),
