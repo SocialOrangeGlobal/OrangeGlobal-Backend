@@ -1,10 +1,35 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, UserRole, TalentProfile, EmployerProfile, AdminProfile } from '@prisma/client';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as ws from 'ws';
+import * as fs from 'fs';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) { }
+  private supabase: SupabaseClient;
+  private readonly logger = new Logger(UsersService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    const supabaseUrl = this.config.get<string>('supabase.url') || process.env.SUPABASE_URL;
+    const serviceRoleKey = this.config.get<string>('supabase.serviceRoleKey') || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (supabaseUrl && serviceRoleKey) {
+      this.supabase = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+        realtime: { transport: ws as any },
+      });
+      this.logger.log('Supabase client initialized successfully in UsersService');
+      fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Supabase client initialized successfully\\n`);
+    } else {
+      this.logger.error('Missing Supabase credentials in UsersService!');
+      fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Missing Supabase credentials! url: ${!!supabaseUrl}, key: ${!!serviceRoleKey}\\n`);
+    }
+  }
 
   async findById(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -649,8 +674,89 @@ export class UsersService {
   }
 
   async deleteUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        talentProfile: {
+          include: { resumes: true },
+        },
+        employerProfile: true,
+        adminProfile: true,
+      },
+    }) as any;
+
     if (!user) throw new NotFoundException('User not found');
+
+    // Delete associated files from Supabase
+    this.logger.log(`Attempting to delete files for user ${id}. Supabase client exists: ${!!this.supabase}`);
+    fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Attempting to delete files for user ${id}. Supabase client exists: ${!!this.supabase}\\n`);
+    if (this.supabase) {
+      const urlsToDelete: string[] = [];
+
+      if (user.talentProfile) {
+        const tp = user.talentProfile;
+        if (tp.avatarUrl) urlsToDelete.push(tp.avatarUrl);
+        if (tp.resumeUrl) urlsToDelete.push(tp.resumeUrl);
+        if (tp.passportUrl) urlsToDelete.push(tp.passportUrl);
+        if (tp.visaUrl) urlsToDelete.push(tp.visaUrl);
+        if (tp.eduCertUrl) urlsToDelete.push(tp.eduCertUrl);
+        if (tp.empCertUrl) urlsToDelete.push(tp.empCertUrl);
+        if (tp.englishTestUrl) urlsToDelete.push(tp.englishTestUrl);
+        if (tp.licenceUrl) urlsToDelete.push(tp.licenceUrl);
+
+        if (tp.resumes && tp.resumes.length > 0) {
+          for (const resume of tp.resumes) {
+            if (resume.fileUrl) urlsToDelete.push(resume.fileUrl);
+          }
+        }
+      }
+
+      if (user.employerProfile && user.employerProfile.companyLogo) {
+        urlsToDelete.push(user.employerProfile.companyLogo);
+      }
+
+      if (user.adminProfile && user.adminProfile.avatarUrl) {
+        urlsToDelete.push(user.adminProfile.avatarUrl);
+      }
+
+      for (const url of new Set(urlsToDelete)) {
+        try {
+          if (!url) continue;
+          const marker = '/storage/v1/object/public/';
+          const idx = url.indexOf(marker);
+          if (idx !== -1) {
+            const bucketAndPath = url.substring(idx + marker.length);
+            const firstSlash = bucketAndPath.indexOf('/');
+            if (firstSlash !== -1) {
+              const bucket = bucketAndPath.substring(0, firstSlash);
+              const path = bucketAndPath.substring(firstSlash + 1);
+              const decodedPath = decodeURIComponent(path);
+
+              this.logger.log(`Attempting to remove decoded path [${decodedPath}] from bucket [${bucket}]`);
+              fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Attempting to remove decoded path [${decodedPath}] from bucket [${bucket}]\\n`);
+
+              const { error, data } = await this.supabase.storage.from(bucket).remove([decodedPath]);
+              if (error) {
+                this.logger.error(`Failed to delete file from Supabase: ${url}`, error);
+                fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Failed to delete file: ${error.message}\\n`);
+              } else {
+                this.logger.log(`Successfully deleted file from Supabase: ${bucket}/${decodedPath}`);
+                fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Successfully deleted file: ${JSON.stringify(data)}\\n`);
+              }
+            } else {
+              this.logger.warn(`Could not parse bucket and path from URL: ${url}`);
+              fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Could not parse bucket from URL: ${url}\\n`);
+            }
+          } else {
+            this.logger.warn(`URL does not contain Supabase marker: ${url}`);
+            fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] URL lacks marker: ${url}\\n`);
+          }
+        } catch (e) {
+          this.logger.error(`Error deleting file ${url}: ${e.message}`);
+          fs.appendFileSync('delete-debug.log', `[${new Date().toISOString()}] Exception deleting file ${url}: ${e.message}\\n`);
+        }
+      }
+    }
 
     await this.prisma.user.delete({ where: { id } });
     return { success: true, message: 'User deleted successfully' };
