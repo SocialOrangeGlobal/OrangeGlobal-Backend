@@ -102,7 +102,7 @@ export class JobsService {
       where.mode = { contains: query.mode, mode: 'insensitive' };
     }
 
-    const [items, total] = await this.prisma.$transaction([
+    const [items, total] = await Promise.all([
       this.prisma.job.findMany({
         where,
         include: {
@@ -179,7 +179,7 @@ export class JobsService {
 
   async getStats() {
     const [total, published, unpublished, vacanciesAgg] =
-      await this.prisma.$transaction([
+      await Promise.all([
         this.prisma.job.count(),
         this.prisma.job.count({ where: { isPublished: true } }),
         this.prisma.job.count({ where: { isPublished: false } }),

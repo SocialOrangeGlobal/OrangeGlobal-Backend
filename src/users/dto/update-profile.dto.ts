@@ -5,6 +5,7 @@ import {
   IsArray,
   ValidateNested,
   IsNotEmpty,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EducationDto, ExperienceDto } from '../../auth/dto/signup-talent.dto';
@@ -59,11 +60,13 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'https://storage.example.com/avatar.jpg' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(jpg|jpeg|png|webp)(\?.*)?$/i, { message: 'avatarUrl must be a valid image URL (.jpg, .jpeg, .png, .webp)' })
   avatarUrl?: string;
 
   @ApiPropertyOptional({ example: 'https://storage.example.com/resume.pdf' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(pdf|doc|docx)(\?.*)?$/i, { message: 'resumeUrl must be a valid document URL (.pdf, .doc, .docx)' })
   resumeUrl?: string;
 
   // Additional Talent Details
@@ -285,31 +288,37 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ description: '[Section 8: Documents] Passport Bio Page Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/passport.pdf' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'passportUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
   passportUrl?: string;
 
   @ApiPropertyOptional({ description: '[Section 8: Documents] Visa/Residency Permit Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/visa.pdf' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'visaUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
   visaUrl?: string;
 
-  @ApiProperty({ description: '[Section 8: Documents] Educational Certificates Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/edu_certs.pdf' })
+  @ApiPropertyOptional({ description: '[Section 8: Documents] Educational Certificates Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/edu_certs.pdf' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  eduCertUrl: string;
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'eduCertUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  eduCertUrl?: string;
 
-  @ApiProperty({ description: '[Section 8: Documents] Employment / Experience Letters Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/emp_letters.pdf' })
+  @ApiPropertyOptional({ description: '[Section 8: Documents] Employment / Experience Letters Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/emp_letters.pdf' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  empCertUrl: string;
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'empCertUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  empCertUrl?: string;
 
   @ApiPropertyOptional({ description: '[Section 8: Documents] English Test Results Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/english_test.pdf' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'englishTestUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
   englishTestUrl?: string;
 
   @ApiPropertyOptional({ description: '[Section 8: Documents] Professional License Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/licence.pdf' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'licenceUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
   licenceUrl?: string;
 
   @ApiPropertyOptional({ description: '[Section 9: Declaration] I declare all information is true', example: 'Yes' })
@@ -361,6 +370,7 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'https://storage.example.com/avatar.jpg' })
   @IsOptional()
   @IsString()
+  @Matches(/^$|\.(jpg|jpeg|png|webp)(\?.*)?$/i, { message: 'companyLogo must be a valid image URL (.jpg, .jpeg, .png, .webp)' })
   companyLogo?: string;
 
   // Admin Fields
