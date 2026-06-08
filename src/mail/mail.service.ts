@@ -254,6 +254,83 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  // ─── Enquiry Reply Notification for Unregistered Users ────────────────────
+  async sendEnquiryReplyEmail(email: string, data: { fullName: string; subject: string; message: string; replyMessage: string }) {
+    this.logger.log(`Preparing Enquiry Reply Notification Email for guest user: ${email}`);
+    const body = `
+      <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">Reply to Your Inquiry</h2>
+      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
+        Dear ${data.fullName},
+      </p>
+      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
+        Thank you for contacting Orange Global. A member of our support team has replied to your inquiry:
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:${C.gray};">
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};width:120px;">Your Subject:</td>
+          <td style="padding:6px 0;">${data.subject}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-weight:700;color:${C.dark};">Your Query:</td>
+          <td style="padding:6px 0;font-style:italic;">"${data.message}"</td>
+        </tr>
+        <tr>
+          <td style="padding:18px 0 6px 0;font-weight:700;color:${C.teal};" colspan="2">Orange Global Team Reply:</td>
+        </tr>
+        <tr>
+          <td style="padding:12px;background-color:#EBF8FA;border-left:4px solid ${C.teal};border-radius:0 6px 6px 0;color:${C.dark};line-height:1.6;" colspan="2">
+            ${data.replyMessage.replace(/\n/g, '<br/>')}
+          </td>
+        </tr>
+      </table>
+
+      ${divider}
+
+      <p style="margin:20px 0 0 0;font-size:12px;color:${C.muted};line-height:1.6;">
+        If you have further questions, please reply directly to this email or submit a new inquiry on our website.
+      </p>
+    `;
+
+    await this.sendMail({
+      to: email,
+      subject: `Re: ${data.subject} – Orange Global`,
+      html: layout(body),
+    });
+  }
+
+  // ─── Newsletter Welcome Email ─────────────────────────────────────────────
+  async sendNewsletterWelcomeEmail(email: string) {
+    this.logger.log(`Preparing Newsletter Welcome Email for: ${email}`);
+    const body = `
+      <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">Welcome to the Orange Global Newsletter!</h2>
+      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
+        Thank you for subscribing to the Orange Global newsletter. We are thrilled to have you join our community!
+      </p>
+      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
+        Every month, we deliver strategic perspectives directly to your inbox:
+      </p>
+
+      <ul style="margin:0 0 24px 0;padding:0 0 0 20px;font-size:14px;color:${C.gray};line-height:1.8;">
+        <li>📈 <strong>Exclusive Salary Data</strong>: Get updated benchmarks across industries.</li>
+        <li>🌏 <strong>Global Hiring & Immigration Trends</strong>: Navigate immigration updates and cross-border recruiting with ease.</li>
+        <li>💡 <strong>Leadership & Career Insights</strong>: Actionable tips for scaling teams and advancing careers.</li>
+      </ul>
+
+      ${divider}
+
+      <p style="margin:20px 0 0 0;font-size:12px;color:${C.muted};line-height:1.6;">
+        You are receiving this email because you subscribed on our website. You can unsubscribe at any time by clicking the link in our monthly newsletter.
+      </p>
+    `;
+
+    await this.sendMail({
+      to: email,
+      subject: 'Welcome to the Orange Global Newsletter! ✉️',
+      html: layout(body),
+    });
+  }
+
   // ─── Internal sendMail ────────────────────────────────────────────────────
   private async sendMail(options: { to: string; subject: string; html: string }) {
     const isLogOnly = this.configService.get<boolean>('mail.logOnly');

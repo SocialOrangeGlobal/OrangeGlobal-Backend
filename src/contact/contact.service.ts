@@ -34,11 +34,14 @@ export class ContactService {
       },
     });
 
-    // 2. Send Notification Email
+    // 2. Send Notification/Welcome Email
     try {
+      if (dto.type === 'NEWSLETTER') {
+        await this.mailService.sendNewsletterWelcomeEmail(dto.email);
+      }
       await this.mailService.sendContactNotificationEmail(dto);
     } catch (error: any) {
-      this.logger.error(`Failed to send contact notification email: ${error.message}`);
+      this.logger.error(`Failed to send contact email notification: ${error.message}`);
     }
 
     return {
@@ -153,6 +156,20 @@ export class ContactService {
       reply,
       senderRole,
     });
+
+    // If Admin replies to a query, send an email notification to the user's inbox
+    if (senderRole === 'ADMIN') {
+      try {
+        await this.mailService.sendEnquiryReplyEmail(enquiry.email, {
+          fullName: enquiry.fullName,
+          subject: enquiry.subject,
+          message: enquiry.message,
+          replyMessage: dto.message,
+        });
+      } catch (error: any) {
+        this.logger.error(`Failed to send enquiry reply email: ${error.message}`);
+      }
+    }
 
     return reply;
   }
