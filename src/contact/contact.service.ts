@@ -243,6 +243,14 @@ export class ContactService {
       senderRole: 'ADMIN',
     });
 
+    this.eventEmitter.emit('notification.send', {
+      userId: enquiry.userId,
+      title: 'New Message',
+      message: 'You have received a new message from the Orange Global team.',
+      type: 'MESSAGE',
+      link: '/direct-messages'
+    });
+
     try {
       await this.mailService.sendEnquiryReplyEmail(user.email, {
         fullName: fullName,
