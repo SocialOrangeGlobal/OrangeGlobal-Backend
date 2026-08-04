@@ -133,6 +133,7 @@ export class AuthService {
             empCertUrl: dto.empCertUrl ?? null,
             englishTestUrl: dto.englishTestUrl ?? null,
             licenceUrl: dto.licenceUrl ?? null,
+            financialStatementUrl: dto.financialStatementUrl ?? null,
             declarationTrue: dto.declarationTrue ?? null,
             declarationConsent: dto.declarationConsent ?? null,
           },

@@ -132,6 +132,7 @@ model TalentProfile {
   empCertUrl            String?  @map("emp_cert_url") @db.Text
   englishTestUrl        String?  @map("english_test_url") @db.Text
   licenceUrl            String?  @map("licence_url") @db.Text
+  financialStatementUrl String?  @map("financial_statement_url") @db.Text
   declarationTrue       String?  @map("declaration_true") @db.VarChar(20)
   declarationConsent    String?  @map("declaration_consent") @db.VarChar(20)
 
@@ -345,6 +346,8 @@ model ContactReply {
   senderId         String         @map("sender_id") @db.Uuid
   senderRole       UserRole       @map("sender_role")
   message          String         @db.Text
+  isRead           Boolean        @default(false) @map("is_read")
+  readAt           DateTime?      @map("read_at")
   createdAt        DateTime       @default(now()) @map("created_at")
 
   contactMessage   ContactMessage @relation(fields: [contactMessageId], references: [id], onDelete: Cascade)

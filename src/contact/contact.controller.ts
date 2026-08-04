@@ -29,7 +29,17 @@ export class ContactController {
   @ApiOperation({ summary: 'Get current user\'s submitted enquiries and replies' })
   @ApiResponse({ status: 200, description: 'List of enquiries submitted by the user' })
   findUserMessages(@Req() req: any) {
-    return this.contactService.findUserMessages(req.user.id);
+    return this.contactService.findUserMessages(req.user.id, req.user.email);
+  }
+
+  @Post('direct')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Initiate a direct message thread with a talent (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Direct message initiated' })
+  initiateDirectMessage(@Req() req: any, @Body() dto: { userId: string; message: string }) {
+    return this.contactService.initiateDirectMessage(dto.userId, req.user.id, dto.message);
   }
 
   @Post(':id/reply')
@@ -93,5 +103,30 @@ export class ContactController {
     @Body() dto: UpdateEnquiryDto,
   ) {
     return this.contactService.updateEnquiry(id, dto);
+  }
+
+  @Patch(':id/read')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Mark all replies in a thread as read' })
+  @ApiResponse({ status: 200, description: 'Thread marked as read successfully' })
+  markThreadAsRead(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.contactService.markThreadAsRead(id, req.user.id, req.user.role);
+  }
+
+  @Post(':id/typing')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Trigger typing indicator for a thread' })
+  @ApiResponse({ status: 200, description: 'Typing event emitted' })
+  triggerTyping(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body('isTyping') isTyping: boolean,
+  ) {
+    return this.contactService.triggerTyping(id, req.user.id, req.user.role, isTyping);
   }
 }

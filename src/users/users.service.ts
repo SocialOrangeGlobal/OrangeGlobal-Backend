@@ -186,6 +186,7 @@ export class UsersService {
         empCertUrl,
         englishTestUrl,
         licenceUrl,
+        financialStatementUrl,
         declarationTrue,
         declarationConsent,
       } = dto;
@@ -268,6 +269,7 @@ export class UsersService {
           empCertUrl,
           englishTestUrl,
           licenceUrl,
+          financialStatementUrl,
           declarationTrue,
           declarationConsent,
         },
@@ -703,6 +705,7 @@ export class UsersService {
         if (tp.empCertUrl) urlsToDelete.push(tp.empCertUrl);
         if (tp.englishTestUrl) urlsToDelete.push(tp.englishTestUrl);
         if (tp.licenceUrl) urlsToDelete.push(tp.licenceUrl);
+        if (tp.financialStatementUrl) urlsToDelete.push(tp.financialStatementUrl);
 
         if (tp.resumes && tp.resumes.length > 0) {
           for (const resume of tp.resumes) {

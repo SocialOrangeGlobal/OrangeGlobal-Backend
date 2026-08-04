@@ -364,6 +364,12 @@ export class SignUpTalentDto {
   @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'licenceUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
   licenceUrl?: string;
 
+  @ApiPropertyOptional({ description: '[Section 8: Documents] Financial Statement Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/financial_statement.pdf' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'financialStatementUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  financialStatementUrl?: string;
+
   // ─── SECTION 9: DECLARATION ───────────────────────────────────────────────────
   @ApiProperty({ description: '[Section 9: Declaration] I declare all information is true', example: 'Yes' })
   @IsString()

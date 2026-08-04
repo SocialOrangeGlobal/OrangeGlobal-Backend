@@ -87,7 +87,7 @@ export class NotificationsListener {
             title: '💬 New Live Chat Reply',
             message: `Orange Global Team: "${reply.message.substring(0, 60)}${reply.message.length > 60 ? '...' : ''}"`,
             type: NotificationType.MESSAGE,
-            link: '/contact?type=consultation',
+            link: enquiry.type === 'DIRECT_MESSAGE' ? `/direct-messages?id=${enquiry.id}` : `/contact?tab=consultation&id=${enquiry.id}`,
           });
         }
       } else {
@@ -109,12 +109,75 @@ export class NotificationsListener {
             title: '💬 New Client Reply',
             message: `${enquiry.fullName || 'Client'}: "${reply.message.substring(0, 60)}${reply.message.length > 60 ? '...' : ''}"`,
             type: NotificationType.MESSAGE,
-            link: `/messages?id=${enquiry.id}`, // Admin messages/enquiries page
+            link: enquiry.type === 'DIRECT_MESSAGE' ? `/direct-messages?id=${enquiry.id}` : `/messages?id=${enquiry.id}`, // Route based on type
           });
         }
       }
     } catch (error: any) {
       this.logger.error(`Failed to handle chat.reply: ${error?.message}`);
+    }
+  }
+
+  @OnEvent('chat.read')
+  async handleChatReadEvent(payload: { threadId: string; readBy: string; count: number }) {
+    try {
+      this.logger.log(`chat.read → threadId=${payload.threadId} readBy=${payload.readBy} count=${payload.count}`);
+      
+      const enquiry = await this.prisma.contactMessage.findUnique({
+        where: { id: payload.threadId },
+        select: { userId: true }
+      });
+
+      if (!enquiry) return;
+
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      });
+
+      // Forward read receipt event to BOTH sides (Admin and User)
+      const data = { threadId: payload.threadId, readBy: payload.readBy };
+      
+      if (enquiry.userId) {
+        this.notificationsGateway.sendEventToUser(enquiry.userId, 'chat_read', data);
+      }
+      for (const admin of admins) {
+        this.notificationsGateway.sendEventToUser(admin.id, 'chat_read', data);
+      }
+    } catch (error: any) {
+      this.logger.error(`Failed to handle chat.read: ${error?.message}`);
+    }
+  }
+
+  @OnEvent('chat.typing')
+  async handleChatTypingEvent(payload: { threadId: string; typingBy: string; role: string; isTyping: boolean }) {
+    try {
+      const enquiry = await this.prisma.contactMessage.findUnique({
+        where: { id: payload.threadId },
+        select: { userId: true }
+      });
+
+      if (!enquiry) return;
+
+      const data = { threadId: payload.threadId, typingBy: payload.typingBy, isTyping: payload.isTyping };
+
+      if (payload.role === 'ADMIN') {
+        // Send to user
+        if (enquiry.userId) {
+          this.notificationsGateway.sendEventToUser(enquiry.userId, 'chat_typing', data);
+        }
+      } else {
+        // Send to all admins
+        const admins = await this.prisma.user.findMany({
+          where: { role: 'ADMIN' },
+          select: { id: true },
+        });
+        for (const admin of admins) {
+          this.notificationsGateway.sendEventToUser(admin.id, 'chat_typing', data);
+        }
+      }
+    } catch (error: any) {
+      this.logger.error(`Failed to handle chat.typing: ${error?.message}`);
     }
   }
 }

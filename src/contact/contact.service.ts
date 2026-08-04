@@ -73,6 +73,15 @@ export class ContactService {
       this.prisma.contactMessage.findMany({
         where,
         include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              talentProfile: true,
+              employerProfile: true,
+            }
+          },
           replies: {
             orderBy: { createdAt: 'asc' },
             include: {
@@ -157,6 +166,16 @@ export class ContactService {
       senderRole,
     });
 
+    if (enquiry.userId && senderRole === 'ADMIN') {
+      this.eventEmitter.emit('notification.send', {
+        userId: enquiry.userId,
+        title: 'New Message',
+        message: 'You have received a new message from the Orange Global team.',
+        type: 'MESSAGE',
+        link: enquiry.type === 'DIRECT_MESSAGE' ? '/direct-messages' : '/contact'
+      });
+    }
+
     // If Admin replies to a query, send an email notification to the user's inbox
     if (senderRole === 'ADMIN') {
       try {
@@ -172,6 +191,69 @@ export class ContactService {
     }
 
     return reply;
+  }
+
+  async initiateDirectMessage(userId: string, adminId: string, message: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { talentProfile: true, employerProfile: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const fullName = user.talentProfile?.fullName || user.employerProfile?.companyName || 'User';
+
+    const enquiry = await this.prisma.contactMessage.create({
+      data: {
+        userId,
+        fullName,
+        email: user.email,
+        subject: 'Chat from Orange Global',
+        message: message,
+        type: 'DIRECT_MESSAGE',
+        status: 'PENDING',
+      },
+    });
+
+    const reply = await this.prisma.contactReply.create({
+      data: {
+        contactMessageId: enquiry.id,
+        senderId: adminId,
+        senderRole: 'ADMIN',
+        message: message,
+      },
+      include: {
+        sender: {
+          select: {
+            email: true,
+            role: true,
+            adminProfile: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+    });
+
+    // Emit live chat reply event for real-time WebSocket pushing
+    this.eventEmitter.emit('chat.reply', {
+      enquiry,
+      reply,
+      senderRole: 'ADMIN',
+    });
+
+    try {
+      await this.mailService.sendEnquiryReplyEmail(user.email, {
+        fullName: fullName,
+        subject: enquiry.subject,
+        message: 'Chat Message from Admin',
+        replyMessage: message,
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send direct message email: ${error.message}`);
+    }
+
+    return { enquiry, reply };
   }
 
   async findOne(id: string) {
@@ -201,9 +283,14 @@ export class ContactService {
     return enquiry;
   }
 
-  async findUserMessages(userId: string) {
+  async findUserMessages(userId: string, email: string) {
     return this.prisma.contactMessage.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId },
+          { email }
+        ]
+      },
       include: {
         replies: {
           orderBy: { createdAt: 'asc' },
@@ -221,5 +308,34 @@ export class ContactService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async markThreadAsRead(threadId: string, userId: string, role: string) {
+    // Determine condition for whose messages to mark as read
+    // If admin, mark all messages where sender is NOT admin. If user, mark where sender IS admin.
+    const senderCondition = role === 'ADMIN' ? { notIn: [UserRole.ADMIN] } : UserRole.ADMIN;
+
+    const result = await this.prisma.contactReply.updateMany({
+      where: {
+        contactMessageId: threadId,
+        senderRole: senderCondition,
+        isRead: false
+      },
+      data: {
+        isRead: true,
+        readAt: new Date()
+      }
+    });
+
+    if (result.count > 0) {
+      this.eventEmitter.emit('chat.read', { threadId, readBy: userId, count: result.count });
+    }
+
+    return { success: true, count: result.count };
+  }
+
+  async triggerTyping(threadId: string, userId: string, role: string, isTyping: boolean = true) {
+    this.eventEmitter.emit('chat.typing', { threadId, typingBy: userId, role, isTyping });
+    return { success: true };
   }
 }
