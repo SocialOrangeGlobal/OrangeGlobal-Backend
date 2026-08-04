@@ -92,7 +92,7 @@ export class ChatbotService {
     private readonly config: ConfigService,
   ) {
     this.staffUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5174';
-    this.adminUrl = this.config.get<string>('ADMIN_URL') ?? 'http://localhost:5173';
+    this.adminUrl = this.config.get<string>('ADMIN_URL') ?? 'https://admin.orangeglobal.co';
     this.staticResponses = this.buildStaticResponses();
 
     const key = this.config.get<string>('GEMINI_API_KEY');

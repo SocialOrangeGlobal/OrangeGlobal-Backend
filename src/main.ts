@@ -35,6 +35,7 @@ async function bootstrap() {
     frontendUrl,
     'https://orangeglobal.co',
     'https://www.orangeglobal.co',
+    'https://admin.orangeglobal.co',
     'https://orange-global-hire.vercel.app',
     'https://orangeglobal-backend.onrender.com',
   ];
