@@ -184,6 +184,7 @@ export class ContactService {
           subject: enquiry.subject,
           message: enquiry.message,
           replyMessage: dto.message,
+          threadId: enquiry.id,
         });
       } catch (error: any) {
         this.logger.error(`Failed to send enquiry reply email: ${error.message}`);
@@ -248,6 +249,7 @@ export class ContactService {
         subject: enquiry.subject,
         message: 'Chat Message from Admin',
         replyMessage: message,
+        threadId: enquiry.id,
       });
     } catch (error: any) {
       this.logger.error(`Failed to send direct message email: ${error.message}`);

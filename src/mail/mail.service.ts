@@ -255,46 +255,52 @@ export class MailService implements OnModuleInit {
   }
 
   // ─── Enquiry Reply Notification for Unregistered Users ────────────────────
-  async sendEnquiryReplyEmail(email: string, data: { fullName: string; subject: string; message: string; replyMessage: string }) {
-    this.logger.log(`Preparing Enquiry Reply Notification Email for guest user: ${email}`);
+  async sendEnquiryReplyEmail(email: string, data: { fullName: string; subject: string; message: string; replyMessage: string; threadId?: string }) {
+    this.logger.log(`Preparing Enquiry Reply Notification Email for user: ${email}`);
+
+    const buttonHtml = data.threadId 
+      ? `
+      <div style="margin-top: 32px; text-align: center;">
+        <a href="https://orange-global-hire.vercel.app/direct-messages?id=${data.threadId}&focus=true" style="display: inline-block; padding: 14px 28px; background-color: ${C.teal}; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Reply in Chat
+        </a>
+      </div>
+      ` : '';
+
     const body = `
-      <h2 style="margin:0 0 14px 0;font-size:20px;font-weight:700;color:${C.dark};letter-spacing:-0.3px;">Reply to Your Inquiry</h2>
-      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
-        Dear ${data.fullName},
+      <h2 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${C.dark};">New Message from Orange Global</h2>
+      <p style="margin:0 0 24px 0;font-size:15px;color:${C.gray};line-height:1.6;">
+        Hi ${data.fullName},
       </p>
-      <p style="margin:0 0 18px 0;font-size:14px;color:${C.gray};line-height:1.75;">
-        Thank you for contacting Orange Global. A member of our support team has replied to your inquiry:
+      <p style="margin:0 0 24px 0;font-size:15px;color:${C.gray};line-height:1.6;">
+        You have received a new reply from our support team regarding your inquiry:
       </p>
 
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:${C.gray};">
-        <tr>
-          <td style="padding:6px 0;font-weight:700;color:${C.dark};width:120px;">Your Subject:</td>
-          <td style="padding:6px 0;">${data.subject}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;font-weight:700;color:${C.dark};">Your Query:</td>
-          <td style="padding:6px 0;font-style:italic;">"${data.message}"</td>
-        </tr>
-        <tr>
-          <td style="padding:18px 0 6px 0;font-weight:700;color:${C.teal};" colspan="2">Orange Global Team Reply:</td>
-        </tr>
-        <tr>
-          <td style="padding:12px;background-color:#EBF8FA;border-left:4px solid ${C.teal};border-radius:0 6px 6px 0;color:${C.dark};line-height:1.6;" colspan="2">
-            ${data.replyMessage.replace(/\n/g, '<br/>')}
-          </td>
-        </tr>
-      </table>
+      <div style="background-color: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid ${C.muted}; margin-bottom: 24px;">
+        <p style="margin:0 0 8px 0;font-size:12px;color:${C.muted};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Your Subject</p>
+        <p style="margin:0 0 16px 0;font-size:15px;color:${C.dark};font-weight:600;">${data.subject}</p>
+        
+        <p style="margin:0 0 8px 0;font-size:12px;color:${C.muted};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Your Original Message</p>
+        <p style="margin:0;font-size:15px;color:${C.gray};font-style:italic;">"${data.message}"</p>
+      </div>
 
-      ${divider}
+      <div style="background-color: #EBF8FA; padding: 24px; border-radius: 8px; border: 1px solid rgba(14, 138, 143, 0.2);">
+        <p style="margin:0 0 12px 0;font-size:13px;color:${C.teal};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Admin Reply</p>
+        <p style="margin:0;font-size:16px;color:${C.dark};line-height:1.6;font-weight:500;">
+          ${data.replyMessage.replace(/\n/g, '<br/>')}
+        </p>
+      </div>
 
-      <p style="margin:20px 0 0 0;font-size:12px;color:${C.muted};line-height:1.6;">
-        If you have further questions, please reply directly to this email or submit a new inquiry on our website.
+      ${buttonHtml}
+
+      <p style="margin:28px 0 0 0;font-size:13px;color:${C.muted};line-height:1.6;text-align:center;">
+        If you have further questions, please click the button above to reply directly in your chat portal.
       </p>
     `;
 
     await this.sendMail({
       to: email,
-      subject: `Re: ${data.subject} – Orange Global`,
+      subject: `New Reply: ${data.subject} – Orange Global`,
       html: layout(body),
     });
   }
