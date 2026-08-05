@@ -91,7 +91,7 @@ export class ChatbotService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.staffUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5174';
+    this.staffUrl = this.config.get<string>('FRONTEND_URL') ?? 'https://orangeglobal.co';
     this.adminUrl = this.config.get<string>('ADMIN_URL') ?? 'https://admin.orangeglobal.co';
     this.staticResponses = this.buildStaticResponses();
 

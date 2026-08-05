@@ -367,8 +367,14 @@ export class SignUpTalentDto {
   @ApiPropertyOptional({ description: '[Section 8: Documents] Financial Statement Document URL', example: 'https://supabase.co/storage/v1/object/public/documents/financial_statement.pdf' })
   @IsOptional()
   @IsString()
-  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'financialStatementUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
-  financialStatementUrl?: string;
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'bankStatementUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  bankStatementUrl?: string;
+
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'taxDocumentUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  taxDocumentUrl?: string;
+
+  @Matches(/^$|\.(pdf|jpg|jpeg|png|doc|docx)(\?.*)?$/i, { message: 'paySlipUrl must be a valid document/image URL (.pdf, .jpg, .png, .doc, .docx)' })
+  paySlipUrl?: string;
 
   // ─── SECTION 9: DECLARATION ───────────────────────────────────────────────────
   @ApiProperty({ description: '[Section 9: Declaration] I declare all information is true', example: 'Yes' })

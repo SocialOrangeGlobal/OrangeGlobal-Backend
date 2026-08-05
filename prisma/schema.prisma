@@ -132,7 +132,9 @@ model TalentProfile {
   empCertUrl            String?  @map("emp_cert_url") @db.Text
   englishTestUrl        String?  @map("english_test_url") @db.Text
   licenceUrl            String?  @map("licence_url") @db.Text
-  financialStatementUrl String?  @map("financial_statement_url") @db.Text
+  bankStatementUrl String?  @map("bank_statement_url") @db.Text
+  taxDocumentUrl String?    @map("tax_document_url") @db.Text
+  paySlipUrl     String?    @map("pay_slip_url") @db.Text
   declarationTrue       String?  @map("declaration_true") @db.VarChar(20)
   declarationConsent    String?  @map("declaration_consent") @db.VarChar(20)
 
