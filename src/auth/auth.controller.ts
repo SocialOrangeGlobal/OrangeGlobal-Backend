@@ -24,6 +24,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser, AuthenticatedUser } from './decorators/current-user.decorator';
 import { ForgotPasswordDto, ResetPasswordDto, VerifyEmailDto } from './dto/password-reset.dto';
+import { SpamGuard } from '../common/guards/spam-guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -33,9 +34,11 @@ export class AuthController {
   // ─── POST /auth/signup/talent ─────────────────────────────────────────────
   @Post('signup/talent')
   @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 signups per minute per IP
+  @UseGuards(SpamGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 signups per minute per IP
   @ApiOperation({ summary: 'Register a new Talent account' })
   @ApiResponse({ status: 201, description: 'Talent registered successfully' })
+  @ApiResponse({ status: 403, description: 'Spam detected' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @ApiResponse({ status: 422, description: 'Validation error' })
   signUpTalent(@Body() dto: SignUpTalentDto) {
@@ -45,9 +48,11 @@ export class AuthController {
   // ─── POST /auth/signup/employer ───────────────────────────────────────────
   @Post('signup/employer')
   @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(SpamGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 signups per minute per IP
   @ApiOperation({ summary: 'Register a new Employer account' })
   @ApiResponse({ status: 201, description: 'Employer registered successfully' })
+  @ApiResponse({ status: 403, description: 'Spam detected' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @ApiResponse({ status: 422, description: 'Validation error' })
   signUpEmployer(@Body() dto: SignUpEmployerDto) {
@@ -57,7 +62,7 @@ export class AuthController {
   // ─── POST /auth/signin ────────────────────────────────────────────────────
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute per IP
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute per IP (brute-force defense)
   @ApiOperation({ summary: 'Sign in as Talent or Employer' })
   @ApiResponse({ status: 200, description: 'Sign in successful — returns access + refresh tokens' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -90,9 +95,10 @@ export class AuthController {
   // ─── POST /auth/forgot-password ───────────────────────────────────────────
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 2, ttl: 60000 } }) // 2 requests per minute per IP
   @ApiOperation({ summary: 'Request password reset link' })
   @ApiResponse({ status: 200, description: 'Reset link sent if email exists' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }

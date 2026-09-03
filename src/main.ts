@@ -9,6 +9,7 @@ import { WsAdapter } from '@nestjs/platform-ws';
 import { AppModule } from './app.module';
 import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { SanitizePipe } from './common/pipes/sanitize.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -65,8 +66,9 @@ async function bootstrap() {
   // ─── Global Prefix ───────────────────────────────────────────────────────
   app.setGlobalPrefix('api/v1');
 
-  // ─── Global Validation Pipe ──────────────────────────────────────────────
+  // ─── Global Validation & Sanitization Pipes ─────────────────────────────
   app.useGlobalPipes(
+    new SanitizePipe(),             // Sanitize first (strip HTML, block SQL injection)
     new ValidationPipe({
       whitelist: true,              // Strip unknown properties
       forbidNonWhitelisted: true,   // Throw on unknown properties

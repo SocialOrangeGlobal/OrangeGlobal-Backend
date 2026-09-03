@@ -15,6 +15,7 @@ import {
   ApiProperty,
 } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { Throttle } from '@nestjs/throttler';
 import { ChatbotService } from './chatbot.service';
 import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 
@@ -40,10 +41,12 @@ export class ChatbotController {
 
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 queries per minute per IP
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Send a message to the Orange AI Chatbot' })
   @ApiResponse({ status: 200, description: 'AI chatbot text reply' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   async queryChatbot(@Body() dto: ChatbotQueryDto, @Req() req: any) {
     const userId    = req.user?.id || req.user?.userId;
     const sessionId = dto.sessionId;

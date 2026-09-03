@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import configuration, { validationSchema } from './config/configuration';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -53,6 +54,14 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     EventEmitterModule.forRoot(),
     NotificationsModule,
     ChatbotModule,
+  ],
+
+  // ─── Global Guards ──────────────────────────────────────────────────────
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule { }

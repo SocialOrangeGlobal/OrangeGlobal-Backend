@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto';
@@ -19,6 +19,40 @@ export class ContactService {
 
   async create(dto: CreateContactMessageDto) {
     this.logger.log(`Handling contact submission from ${dto.email}`);
+
+    // ─── Duplicate Submission Prevention ──────────────────────────────
+    // Block same email from submitting again within 60 seconds
+    const cooldownWindow = new Date(Date.now() - 60 * 1000);
+    const recentSubmission = await this.prisma.contactMessage.findFirst({
+      where: {
+        email: dto.email,
+        createdAt: { gte: cooldownWindow },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (recentSubmission) {
+      this.logger.warn(`[SPAM] Duplicate submission blocked — email: ${dto.email}`);
+      throw new ConflictException(
+        'You have already submitted a message recently. Please wait a minute before trying again.',
+      );
+    }
+
+    // ─── Newsletter Duplicate Prevention ─────────────────────────────
+    // If subscribing to newsletter, check if this email already subscribed
+    if (dto.type === 'NEWSLETTER') {
+      const existingSubscription = await this.prisma.contactMessage.findFirst({
+        where: {
+          email: dto.email,
+          type: 'NEWSLETTER',
+        },
+      });
+
+      if (existingSubscription) {
+        this.logger.log(`Newsletter duplicate blocked — email: ${dto.email}`);
+        throw new ConflictException('This email is already subscribed to our newsletter.');
+      }
+    }
 
     // 1. Save to Database
     const savedMessage = await this.prisma.contactMessage.create({

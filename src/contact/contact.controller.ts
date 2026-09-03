@@ -1,4 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Get, Query, UseGuards, Req, Param, Patch } from '@nestjs/common';
+import { SpamGuard } from '../common/guards/spam-guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ContactService } from './contact.service';
@@ -16,9 +17,12 @@ export class ContactController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 submissions per minute per IP
+  @UseGuards(SpamGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 submissions per minute per IP
   @ApiOperation({ summary: 'Submit a contact form message / enquiry' })
   @ApiResponse({ status: 201, description: 'Message saved' })
+  @ApiResponse({ status: 403, description: 'Spam detected' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   create(@Body() dto: CreateContactMessageDto) {
     return this.contactService.create(dto);
   }
